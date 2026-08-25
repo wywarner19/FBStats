@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { AppHeader } from "@/components/shell/AppHeader";
-import { BriefScreen } from "@/components/brief/BriefScreen";
+import { GamesScreen } from "@/components/schedule/GamesScreen";
+import { TeamsScreen } from "@/components/teams/TeamsScreen";
+import { HelpScreen } from "@/components/help/HelpScreen";
 import { SetupScreen } from "@/components/setup/SetupScreen";
 import { RosterScreen } from "@/components/roster/RosterScreen";
 import { LiveScreen } from "@/components/hud/LiveScreen";
@@ -56,7 +58,9 @@ export default function Page() {
   return (
     <div className="h-[100dvh] overflow-hidden flex flex-col bg-ink text-cloud font-barlow">
       <AppHeader />
-      {screen === "brief" && <BriefScreen />}
+      {screen === "games" && <GamesScreen />}
+      {screen === "teams" && <TeamsScreen />}
+      {screen === "help" && <HelpScreen />}
       {screen === "setup" && <SetupScreen />}
       {screen === "roster" && <RosterScreen />}
       {screen === "live" && <LiveScreen />}

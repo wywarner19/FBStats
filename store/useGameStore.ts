@@ -20,13 +20,31 @@ import {
   gameReducer,
   type GameAction,
 } from "@/lib/engine/reducer";
-import type { GameInfo } from "@/lib/types";
-import { demoGame, newGame as createNewGame, normalizeGame } from "@/lib/engine/factory";
-import { loadLatestGame, saveGame } from "@/lib/db/dexie";
+import type { GameInfo, TeamProfile } from "@/lib/types";
+import {
+  defaultTeamProfile,
+  demoGame,
+  exampleGame,
+  gameFromProfile,
+  newGame as createNewGame,
+  normalizeGame,
+} from "@/lib/engine/factory";
+import {
+  deleteGame,
+  getMeta,
+  loadGame,
+  loadLatestGame,
+  loadTeamProfiles,
+  saveGame,
+  saveTeamProfile,
+  setMeta,
+  deleteTeamProfile as dbDeleteTeamProfile,
+} from "@/lib/db/dexie";
 import { ensureAuth, newCloudId, pushGame } from "@/lib/sync/gameSync";
 
 export type Screen =
-  | "brief"
+  | "games"
+  | "teams"
   | "setup"
   | "roster"
   | "live"
@@ -34,7 +52,8 @@ export type Screen =
   | "chart"
   | "analytics"
   | "season"
-  | "report";
+  | "report"
+  | "help";
 
 export type Overlay =
   | "pen"
@@ -76,6 +95,10 @@ interface UIState {
   broadcast: boolean;
   shareUrl: string | null;
   sharing: boolean;
+  teamProfiles: TeamProfile[];
+  currentGameId: string | null;
+  /** Bumped whenever the games list changes, so list screens re-fetch. */
+  gamesRefresh: number;
 }
 
 interface StoreState extends UIState {
@@ -156,6 +179,21 @@ interface StoreState extends UIState {
   updateInfo: (patch: Partial<GameInfo>) => void;
   startNewGame: () => void;
 
+  // schedule / games list
+  openGame: (id: string) => Promise<void>;
+  createScheduledGame: (opts: {
+    profileId: string;
+    opponentName: string;
+    opponentAbbr: string;
+    date?: string;
+    venue?: "home" | "away" | "neutral";
+  }) => Promise<void>;
+  removeGame: (id: string) => Promise<void>;
+
+  // team profiles
+  saveTeam: (team: TeamProfile) => Promise<void>;
+  removeTeam: (id: string) => Promise<void>;
+
   // QB / spot / review
   setQb: (team: TeamId, num: number) => void;
   nudgeSpot: (delta: number) => void;
@@ -204,7 +242,7 @@ export const useGameStore = create<StoreState>((set, get) => {
   return {
     ...({
       hydrated: false,
-      screen: "brief",
+      screen: "games",
       model: "A",
       padMode: "off",
       draft: blankDraft(),
@@ -224,6 +262,9 @@ export const useGameStore = create<StoreState>((set, get) => {
       broadcast: false,
       shareUrl: null,
       sharing: false,
+      teamProfiles: [],
+      currentGameId: null,
+      gamesRefresh: 0,
     } as UIState),
 
     game: initial,
@@ -232,12 +273,22 @@ export const useGameStore = create<StoreState>((set, get) => {
     hydrate: async () => {
       if (get().hydrated) return;
       try {
-        const saved = await loadLatestGame();
-        if (saved) {
-          applyGame(normalizeGame(saved));
-        } else {
-          await saveGame(initial);
+        // First run: seed the example game + a starter team profile.
+        const seeded = await getMeta<boolean>("seeded");
+        if (!seeded) {
+          await saveGame(exampleGame());
+          await saveTeamProfile(defaultTeamProfile());
+          await setMeta("seeded", true);
         }
+        const teams = await loadTeamProfiles();
+        const currentId = await getMeta<string>("currentGameId");
+        let active = currentId ? await loadGame(currentId) : undefined;
+        if (!active) active = await loadLatestGame();
+        if (active) {
+          applyGame(normalizeGame(active));
+          set({ currentGameId: active.id });
+        }
+        set({ teamProfiles: teams });
       } catch (e) {
         console.error("hydrate failed; using in-memory game", e);
       }
@@ -481,8 +532,64 @@ export const useGameStore = create<StoreState>((set, get) => {
     startNewGame: () => {
       const fresh = createNewGame();
       applyGame(fresh);
-      set({ screen: "setup", draft: blankDraft(), step: 0, overlay: null });
+      saveGame(fresh).catch(() => undefined);
+      setMeta("currentGameId", fresh.id).catch(() => undefined);
+      set({ screen: "setup", draft: blankDraft(), step: 0, overlay: null, currentGameId: fresh.id, shareUrl: null, gamesRefresh: get().gamesRefresh + 1 });
       get().flash("New game started — set up teams & rosters");
+    },
+
+    openGame: async (id) => {
+      const s = get();
+      const g = await loadGame(id);
+      if (!g) return s.flash("That game could not be loaded");
+      applyGame(normalizeGame(g));
+      await setMeta("currentGameId", id);
+      set({ currentGameId: id, screen: "live", draft: blankDraft(), step: 0, overlay: null, shareUrl: null });
+    },
+    createScheduledGame: async (opts) => {
+      const s = get();
+      const profile = s.teamProfiles.find((t) => t.id === opts.profileId);
+      if (!profile) return s.flash("Pick your team first");
+      const g = gameFromProfile(
+        profile,
+        { name: opts.opponentName || "Opponent", abbr: opts.opponentAbbr || "OPP" },
+        { date: opts.date, venue: opts.venue },
+      );
+      await saveGame(g);
+      set({ gamesRefresh: s.gamesRefresh + 1 });
+      s.flash(`Added ${opts.date ? opts.date + " · " : ""}vs ${opts.opponentAbbr || opts.opponentName}`);
+    },
+    removeGame: async (id) => {
+      const s = get();
+      await deleteGame(id);
+      // If we deleted the active game, fall back to the most recent one.
+      if (s.currentGameId === id) {
+        const latest = await loadLatestGame();
+        if (latest) {
+          applyGame(normalizeGame(latest));
+          await setMeta("currentGameId", latest.id);
+          set({ currentGameId: latest.id });
+        }
+      }
+      set({ gamesRefresh: s.gamesRefresh + 1 });
+      s.flash("Game removed");
+    },
+
+    saveTeam: async (team) => {
+      const s = get();
+      const next = { ...team, updatedAt: Date.now() };
+      await saveTeamProfile(next);
+      const exists = s.teamProfiles.some((t) => t.id === next.id);
+      set({
+        teamProfiles: exists
+          ? s.teamProfiles.map((t) => (t.id === next.id ? next : t))
+          : [next, ...s.teamProfiles],
+      });
+    },
+    removeTeam: async (id) => {
+      const s = get();
+      await dbDeleteTeamProfile(id);
+      set({ teamProfiles: s.teamProfiles.filter((t) => t.id !== id) });
     },
     setQb: (team, num) => {
       const s = get();

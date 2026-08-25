@@ -5,7 +5,8 @@ import { reviewStatus } from "@/lib/format";
 import { cx } from "@/components/ui";
 
 const NAV: [Screen, string][] = [
-  ["brief", "Brief"],
+  ["games", "Games"],
+  ["teams", "Teams"],
   ["setup", "Setup"],
   ["roster", "Rosters"],
   ["live", "Play entry"],
@@ -14,6 +15,7 @@ const NAV: [Screen, string][] = [
   ["analytics", "Analytics"],
   ["season", "Season"],
   ["report", "Report"],
+  ["help", "Help"],
 ];
 
 export function AppHeader() {

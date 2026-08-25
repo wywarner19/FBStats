@@ -96,6 +96,18 @@ export interface Team {
   roster: Roster;
 }
 
+/**
+ * One of the user's own teams (varsity, JV, a second program…). Stored once in
+ * the profile and copied into each scheduled game so rosters aren't re-entered.
+ */
+export interface TeamProfile {
+  id: string;
+  name: string;
+  abbr: string;
+  roster: Roster;
+  updatedAt: number;
+}
+
 export interface Penalty {
   name: string;
   yds: number;
@@ -269,6 +281,12 @@ export interface GameState {
   id: string;
   /** Firestore document id once the game is shared to the cloud (unguessable). */
   cloudId?: string;
+  /** Which of the user's team profiles this game belongs to (setup.home). */
+  teamProfileId?: string;
+  /** Venue relative to the user's team, for the schedule label. */
+  venue?: "home" | "away" | "neutral";
+  /** A built-in example game shown in the schedule; not one of the user's. */
+  example?: boolean;
   setup: GameSetup;
   /** The situation the fold starts from (state before the first play). */
   anchor: Situation;

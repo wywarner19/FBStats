@@ -1,10 +1,19 @@
-import type { GameSetup, GameState, PlayEvent, Player, Team } from "@/lib/types";
+import type {
+  GameSetup,
+  GameState,
+  PlayEvent,
+  Player,
+  Team,
+  TeamProfile,
+} from "@/lib/types";
 import { SEED_AWAY, SEED_HOME } from "./constants";
 
 let counter = 0;
 function id(prefix: string): string {
   counter += 1;
-  return `${prefix}-${counter}`;
+  // Timestamp + counter + randomness so ids never collide across sessions
+  // (games and profiles are keyed by these in IndexedDB).
+  return `${prefix}-${Date.now().toString(36)}${counter}${Math.random().toString(36).slice(2, 6)}`;
 }
 
 function toRoster(rows: { n: number; name: string; pos: string }[]): Player[] {
@@ -139,4 +148,70 @@ export function demoGame(): GameState {
     seqCounter: plays.length,
     updatedAt: Date.now(),
   };
+}
+
+/** The built-in example game (the demo), flagged so it reads as a sample. */
+export function exampleGame(): GameState {
+  const g = demoGame();
+  return {
+    ...g,
+    example: true,
+    venue: "home",
+    setup: { ...g.setup, info: { ...(g.setup.info ?? {}), date: "Example game" } },
+  };
+}
+
+/** A starter team profile from the seed roster, offered on first run. */
+export function defaultTeamProfile(): TeamProfile {
+  return {
+    id: id("team"),
+    name: "Northgate Wolves",
+    abbr: "NGT",
+    roster: toRoster(SEED_HOME),
+    updatedAt: Date.now(),
+  };
+}
+
+/** A blank team profile the user fills in. */
+export function blankTeamProfile(name = "", abbr = ""): TeamProfile {
+  return { id: id("team"), name, abbr, roster: [], updatedAt: Date.now() };
+}
+
+export function makeRosterPlayer(num: number, name: string, pos: string): Player {
+  return { id: id("p"), num, name, pos };
+}
+
+/**
+ * Create a fresh, scoreless game for the schedule from one of the user's team
+ * profiles (which becomes HOME in the data model) versus a named opponent.
+ */
+export function gameFromProfile(
+  profile: TeamProfile,
+  opponent: { name: string; abbr: string },
+  opts: { date?: string; venue?: "home" | "away" | "neutral" } = {},
+): GameState {
+  const home: Team = {
+    id: "H",
+    name: profile.name,
+    abbr: profile.abbr,
+    roster: profile.roster.map((p) => ({ ...p })),
+  };
+  const away: Team = { id: "A", name: opponent.name, abbr: opponent.abbr, roster: [] };
+  const setup: GameSetup = {
+    home,
+    away,
+    quarterLengthSec: 12 * 60,
+    kickoff: "",
+    meta: "",
+    info: {
+      date: opts.date ?? "",
+      location: opts.venue === "away" ? "Away" : opts.venue === "neutral" ? "Neutral" : "Home",
+      weather: "",
+      surface: "Turf",
+      officials: "",
+      attendance: "",
+    },
+  };
+  const g = newGame(setup);
+  return { ...g, teamProfileId: profile.id, venue: opts.venue ?? "home" };
 }
