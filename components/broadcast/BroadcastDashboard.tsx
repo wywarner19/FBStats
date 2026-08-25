@@ -91,7 +91,7 @@ export function BroadcastDashboard({
   return (
     <div className="fixed inset-0 z-50 bg-ink text-cloud font-barlow overflow-auto">
       {/* Scoreboard header */}
-      <div className="sticky top-0 z-10 bg-panel-2 border-b border-edge">
+      <div className="sticky top-0 z-10 bg-panel-2 border-b border-edge" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3 px-6 py-4">
           <ScoreBlock abbr={home.abbr} name={home.name} score={sit.scoreH} to={game.timeouts?.H ?? 3} poss={sit.poss === "H"} />
           <div className="font-cond font-bold text-[22px] text-dim-2">vs</div>

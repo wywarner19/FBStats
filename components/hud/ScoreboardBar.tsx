@@ -27,6 +27,8 @@ export function ScoreboardBar() {
   const openKickoff = useGameStore((s) => s.openKickoff);
   const endQuarter = useGameStore((s) => s.endQuarter);
   const undo = useGameStore((s) => s.undo);
+  const redo = useGameStore((s) => s.redo);
+  const canRedo = useGameStore((s) => s.game.redo.length > 0);
 
   const { home, away } = game.setup;
 
@@ -125,9 +127,22 @@ export function ScoreboardBar() {
         </button>
         <button
           onClick={undo}
-          className="min-h-[52px] px-[18px] bg-panel-4 border border-edge-2 rounded-[10px] text-cloud font-cond font-bold text-[14px] leading-none tracking-[.1em] cursor-pointer"
+          className="min-h-[52px] px-3.5 bg-panel-4 border border-edge-2 rounded-[10px] text-cloud font-cond font-bold text-[14px] leading-none tracking-[.08em] cursor-pointer"
         >
           UNDO
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          className={cx(
+            "min-h-[52px] px-3.5 border rounded-[10px] font-cond font-bold text-[14px] leading-none tracking-[.08em]",
+            canRedo
+              ? "bg-panel-4 border-edge-2 text-cloud cursor-pointer"
+              : "bg-panel-3 border-edge text-dim-2 cursor-not-allowed",
+          )}
+          title={canRedo ? "Redo the last undone play" : "Nothing to redo"}
+        >
+          REDO
         </button>
       </div>
     </div>

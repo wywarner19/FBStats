@@ -8,8 +8,12 @@ import { LABEL, cx } from "@/components/ui";
 
 export function SeasonScreen() {
   const game = useGameStore((s) => s.game);
+  const teamProfiles = useGameStore((s) => s.teamProfiles);
   const startNewGame = useGameStore((s) => s.startNewGame);
-  const teamName = game.setup.home.name;
+
+  // Team options: your profiles, plus any home team seen in a stored game.
+  const [teamName, setTeamName] = useState(game.setup.home.name);
+  const [teamOptions, setTeamOptions] = useState<string[]>([]);
 
   const [agg, setAgg] = useState<SeasonAgg | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,14 +23,18 @@ export function SeasonScreen() {
     setLoading(true);
     loadAllGames()
       .then((games) => {
-        if (live) setAgg(aggregateSeason(games, teamName));
+        if (!live) return;
+        const names = new Set<string>(teamProfiles.map((t) => t.name));
+        games.forEach((g) => names.add(g.setup.home.name));
+        setTeamOptions([...names]);
+        setAgg(aggregateSeason(games, teamName));
       })
       .catch((e) => console.error("season load failed", e))
       .finally(() => live && setLoading(false));
     return () => {
       live = false;
     };
-  }, [teamName, game.updatedAt]);
+  }, [teamName, teamProfiles, game.updatedAt]);
 
   const name = (num: number) => agg?.names[num]?.name ?? `#${num}`;
 
@@ -64,7 +72,15 @@ export function SeasonScreen() {
     <div className="flex-1 overflow-auto px-7 pt-6 pb-[50px]">
       <div className="flex items-center gap-4 mb-5 flex-wrap">
         <h2 className="m-0 font-cond font-bold text-[30px] leading-none">Season</h2>
-        <span className="font-medium text-[14px] leading-none text-dim">{teamName}</span>
+        <select
+          value={teamName}
+          onChange={(e) => setTeamName(e.target.value)}
+          className="min-h-[40px] px-3 bg-panel-4 border border-edge-2 rounded-[9px] text-cloud font-semibold text-[14px] outline-none cursor-pointer"
+        >
+          {teamOptions.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
         <div className="flex-1" />
         <button
           onClick={startNewGame}

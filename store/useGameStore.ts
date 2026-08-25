@@ -99,7 +99,12 @@ interface UIState {
   currentGameId: string | null;
   /** Bumped whenever the games list changes, so list screens re-fetch. */
   gamesRefresh: number;
+  /** True while a game is open — controls whether in-game tabs show in the nav. */
+  inGame: boolean;
 }
+
+/** Screens available only while a game is open. */
+export const GAME_SCREENS: Screen[] = ["live", "setup", "roster", "box", "chart", "analytics", "report"];
 
 interface StoreState extends UIState {
   game: GameState;
@@ -265,6 +270,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       teamProfiles: [],
       currentGameId: null,
       gamesRefresh: 0,
+      inGame: false,
     } as UIState),
 
     game: initial,
@@ -302,7 +308,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       applyGame(next);
     },
 
-    setScreen: (screen) => set({ screen, overlay: null }),
+    setScreen: (screen) => set({ screen, overlay: null, inGame: GAME_SCREENS.includes(screen) }),
     setModel: (model) => set({ model }),
     setOverlay: (overlay) => set({ overlay, pen: overlay === "pen" ? null : get().pen }),
     setSetupStep: (setupStep) => set({ setupStep }),
@@ -534,7 +540,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       applyGame(fresh);
       saveGame(fresh).catch(() => undefined);
       setMeta("currentGameId", fresh.id).catch(() => undefined);
-      set({ screen: "setup", draft: blankDraft(), step: 0, overlay: null, currentGameId: fresh.id, shareUrl: null, gamesRefresh: get().gamesRefresh + 1 });
+      set({ screen: "setup", inGame: true, draft: blankDraft(), step: 0, overlay: null, currentGameId: fresh.id, shareUrl: null, gamesRefresh: get().gamesRefresh + 1 });
       get().flash("New game started — set up teams & rosters");
     },
 
@@ -544,7 +550,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       if (!g) return s.flash("That game could not be loaded");
       applyGame(normalizeGame(g));
       await setMeta("currentGameId", id);
-      set({ currentGameId: id, screen: "live", draft: blankDraft(), step: 0, overlay: null, shareUrl: null });
+      set({ currentGameId: id, screen: "live", inGame: true, draft: blankDraft(), step: 0, overlay: null, shareUrl: null });
     },
     createScheduledGame: async (opts) => {
       const s = get();

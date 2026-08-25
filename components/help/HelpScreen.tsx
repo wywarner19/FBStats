@@ -2,6 +2,12 @@
 
 import { CARD, LABEL } from "@/components/ui";
 
+const FEEDBACK_URL =
+  "https://github.com/wywarner19/FBStats/issues/new?labels=feedback&title=" +
+  encodeURIComponent("Feedback: ") +
+  "&body=" +
+  encodeURIComponent("What happened / what you'd like:\n\n\n\n— sent from FBStats Live");
+
 const MODELS: { key: string; name: string; desc: string; taps: string }[] = [
   { key: "A", name: "Field-first, everything visible", desc: "Tap where the play ended, then carrier and result from an always-on grid. Best once you know the roster cold.", taps: "3" },
   { key: "B", name: "Guided steps", desc: "A six-step rail walks type → ball → look → yards → result → defense, auto-advancing. Best for a new spotter.", taps: "4–6" },
@@ -30,6 +36,14 @@ export function HelpScreen() {
             field-first entry metaphor, sized for a single statistician on an iPad who cannot look
             down for long. Offline-first — it works with no signal and autosaves as you go.
           </p>
+          <a
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 mt-4 min-h-[44px] px-4 bg-panel-4 border border-turf rounded-[10px] text-turf font-semibold text-[14px] no-underline cursor-pointer"
+          >
+            💬 Send feedback / report a bug
+          </a>
         </div>
 
         <div>
