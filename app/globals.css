@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f1216;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: "Barlow", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: #55c98a;
+}
+a:hover {
+  color: #7ddba7;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c333d;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Every interactive control clears the 48px ergonomic floor for sideline
+   thumb entry, even where a compact visual height is used. */
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+input {
+  font-family: "Barlow", system-ui, sans-serif;
+}
