@@ -267,6 +267,8 @@ export interface GameSetup {
  */
 export interface GameState {
   id: string;
+  /** Firestore document id once the game is shared to the cloud (unguessable). */
+  cloudId?: string;
   setup: GameSetup;
   /** The situation the fold starts from (state before the first play). */
   anchor: Situation;

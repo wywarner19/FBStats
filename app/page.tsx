@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { AppHeader } from "@/components/shell/AppHeader";
 import { BriefScreen } from "@/components/brief/BriefScreen";
@@ -13,6 +13,7 @@ import { AnalyticsScreen } from "@/components/analytics/AnalyticsScreen";
 import { SeasonScreen } from "@/components/analytics/SeasonScreen";
 import { ReportScreen } from "@/components/analytics/ReportScreen";
 import { BroadcastDashboard } from "@/components/broadcast/BroadcastDashboard";
+import { WatchView } from "@/components/broadcast/WatchView";
 import { PenaltyOverlay } from "@/components/overlays/PenaltyOverlay";
 import { HalftimeOverlay } from "@/components/overlays/HalftimeOverlay";
 import { FixPlayOverlay } from "@/components/overlays/FixPlayOverlay";
@@ -31,15 +32,26 @@ export default function Page() {
   const tryPending = useGameStore((s) => s.situation.tryPending);
   const broadcast = useGameStore((s) => s.broadcast);
 
+  // Watch mode: a broadcaster / phone opened a ?watch=<id> share link — render
+  // the read-only live dashboard, no app shell, no local game needed.
+  const [watchId, setWatchId] = useState<string | null | undefined>(undefined);
   useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("watch");
+    setWatchId(id);
+  }, []);
+
+  useEffect(() => {
+    if (watchId === undefined || watchId) return; // don't hydrate in watch mode
     hydrate();
-  }, [hydrate]);
+  }, [hydrate, watchId]);
 
   // Single game-clock interval; the store decides whether it advances.
   useEffect(() => {
     const id = setInterval(() => tick(), 1000);
     return () => clearInterval(id);
   }, [tick]);
+
+  if (watchId) return <WatchView cloudId={watchId} />;
 
   return (
     <div className="h-[100dvh] overflow-hidden flex flex-col bg-ink text-cloud font-barlow">

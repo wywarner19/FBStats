@@ -198,6 +198,23 @@ and a **yard-by-yard ball-spot nudge** (±1) for correcting the live LOS.
   both teams is credited correctly (offense to the team on possession, tackles
   to the team on defense), which the single-game box score does not disambiguate.
 
+## Live sharing & broadcast (Firebase)
+
+The app stays offline-first and local by default. When you tap **Share live** in
+the Broadcast view, the current game mirrors to **Cloud Firestore** and you get
+an unguessable read-only link (`…/?watch=<id>`). Open it on a phone or hand it to
+a radio broadcaster — they see the **live broadcast dashboard** (scoreboard,
+play-by-play, per-team leaders and stats) updating in real time, with **no
+login**. One writer (the statistician), many read-only viewers.
+
+- `lib/sync/firebase.ts` — client-only Firebase init (config keys are public by
+  design; access is governed by rules).
+- `lib/sync/gameSync.ts` — anonymous auth, debounced push of the game (as a JSON
+  blob), and `watchGame` realtime subscription.
+- `lib/sync/firestore.rules` — publish these in the Firebase console (owner
+  writes; shared games are link-readable) to replace test-mode.
+- Data stays per-device otherwise; a game only leaves the device once you share it.
+
 ## Notes / extension points
 
 - Stats are tracked for the possessing offense + tacklers; full two-side

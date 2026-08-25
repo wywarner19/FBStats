@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// FBStats Live — Firestore security rules.
+// Model: one writer (the signed-in statistician) per game; read-only viewers
+// (broadcaster, phone) open a shared game with its unguessable share link.
+// Publish these in the Firebase console → Firestore Database → Rules → Publish
+// (they replace the temporary 30-day "test mode" rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /games/{gameId} {
+      // Anyone holding the (unguessable) share link may read a shared game;
+      // the owner may always read their own games.
+      allow read: if resource.data.shared == true
+                  || (request.auth != null && request.auth.uid == resource.data.ownerId);
+
+      // Only the signed-in owner can create or modify a game.
+      allow create: if request.auth != null
+                    && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.ownerId;
+    }
+  }
+}

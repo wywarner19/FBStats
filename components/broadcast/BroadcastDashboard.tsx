@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
+import type { GameState } from "@/lib/types";
 import { computeBoxScore } from "@/lib/engine/boxscore";
-import { deriveTimeline, spotLabel } from "@/lib/engine/rules";
+import { deriveSituation, deriveTimeline, spotLabel } from "@/lib/engine/rules";
 import {
   pct,
   situationalSplits,
@@ -31,10 +33,23 @@ function topLabel(sec: number): string {
   return `${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
-export function BroadcastDashboard() {
-  const game = useGameStore((s) => s.game);
-  const sit = useGameStore((s) => s.situation);
+export function BroadcastDashboard({
+  overrideGame,
+  live,
+}: {
+  /** When provided (watch mode), render this game read-only instead of the store's. */
+  overrideGame?: GameState;
+  live?: boolean;
+}) {
+  const storeGame = useGameStore((s) => s.game);
+  const storeSit = useGameStore((s) => s.situation);
   const setBroadcast = useGameStore((s) => s.setBroadcast);
+
+  const game = overrideGame ?? storeGame;
+  const sit = overrideGame
+    ? deriveSituation(overrideGame.setup, overrideGame.plays, overrideGame.anchor)
+    : storeSit;
+  const isWatcher = !!overrideGame;
 
   const { home, away } = game.setup;
   const boxH = computeBoxScore(game.plays, "H");
@@ -92,12 +107,22 @@ export function BroadcastDashboard() {
               {sit.tryPending ? "TRY" : `${spotLabel(sit.spot, game.setup)}`} · {possAbbr(game, sit)} ball
             </div>
           </div>
-          <button
-            onClick={() => setBroadcast(false)}
-            className="min-h-[44px] px-4 bg-panel-4 border border-edge-2 rounded-[10px] text-dim font-semibold text-[13px] cursor-pointer hover:text-cloud"
-          >
-            Exit
-          </button>
+          {isWatcher ? (
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-turf animate-pulse2" />
+              <span className="font-semi font-semibold text-[11px] tracking-[.16em] text-turf">{live ? "LIVE" : "SYNCING"}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <ShareButton />
+              <button
+                onClick={() => setBroadcast(false)}
+                className="min-h-[44px] px-4 bg-panel-4 border border-edge-2 rounded-[10px] text-dim font-semibold text-[13px] cursor-pointer hover:text-cloud"
+              >
+                Exit
+              </button>
+            </div>
+          )}
         </div>
         {latest && (
           <div className="px-6 py-2.5 bg-panel border-t border-edge flex items-center gap-3">
@@ -164,6 +189,47 @@ export function BroadcastDashboard() {
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function ShareButton() {
+  const shareUrl = useGameStore((s) => s.shareUrl);
+  const sharing = useGameStore((s) => s.sharing);
+  const share = useGameStore((s) => s.shareCurrentGame);
+  const flash = useGameStore((s) => s.flash);
+  const [copied, setCopied] = useState(false);
+
+  const onClick = async () => {
+    const url = shareUrl ?? (await share());
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      flash("Copy blocked — the link is in the box, select and copy it");
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      {shareUrl && (
+        <input
+          readOnly
+          value={shareUrl}
+          onFocus={(e) => e.currentTarget.select()}
+          className="hidden sm:block w-[220px] h-[38px] px-2.5 bg-panel-3 border border-edge-3 rounded-[8px] text-[12px] text-mist outline-none"
+        />
+      )}
+      <button
+        onClick={onClick}
+        disabled={sharing}
+        className="min-h-[44px] px-4 bg-panel-4 border border-turf rounded-[10px] text-turf font-semibold text-[13px] cursor-pointer hover:brightness-110 disabled:opacity-60"
+        title="Create a read-only live link for a broadcaster / phone"
+      >
+        {sharing ? "Sharing…" : copied ? "Copied!" : shareUrl ? "Copy link" : "🔗 Share live"}
+      </button>
     </div>
   );
 }

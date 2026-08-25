@@ -23,6 +23,7 @@ import {
 import type { GameInfo } from "@/lib/types";
 import { demoGame, newGame as createNewGame, normalizeGame } from "@/lib/engine/factory";
 import { loadLatestGame, saveGame } from "@/lib/db/dexie";
+import { ensureAuth, newCloudId, pushGame } from "@/lib/sync/gameSync";
 
 export type Screen =
   | "brief"
@@ -73,6 +74,8 @@ interface UIState {
   setupStep: number;
   scanned: boolean;
   broadcast: boolean;
+  shareUrl: string | null;
+  sharing: boolean;
 }
 
 interface StoreState extends UIState {
@@ -93,6 +96,7 @@ interface StoreState extends UIState {
   setScanned: (b: boolean) => void;
   togglePad: () => void;
   setBroadcast: (b: boolean) => void;
+  shareCurrentGame: () => Promise<string | null>;
   flash: (msg: string) => void;
 
   // draft editing
@@ -176,10 +180,22 @@ function scheduleSave(game: GameState) {
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Debounced mirror to Firestore — only games that have been shared (have a
+// cloudId) are pushed, and only from the device doing the scoring.
+let cloudTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleCloudPush(game: GameState) {
+  if (typeof window === "undefined" || !game.cloudId) return;
+  if (cloudTimer) clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(() => {
+    pushGame(game).catch((e) => console.warn("cloud push failed", e));
+  }, 800);
+}
+
 export const useGameStore = create<StoreState>((set, get) => {
   const applyGame = (next: GameState) => {
     const situation = currentSituation(next);
     scheduleSave(next);
+    scheduleCloudPush(next);
     set({ game: next, situation });
   };
 
@@ -206,6 +222,8 @@ export const useGameStore = create<StoreState>((set, get) => {
       setupStep: 1,
       scanned: false,
       broadcast: false,
+      shareUrl: null,
+      sharing: false,
     } as UIState),
 
     game: initial,
@@ -224,6 +242,8 @@ export const useGameStore = create<StoreState>((set, get) => {
         console.error("hydrate failed; using in-memory game", e);
       }
       set({ hydrated: true });
+      // Warm up cloud auth in the background so sharing is instant later.
+      ensureAuth().catch(() => undefined);
     },
 
     dispatch: (action) => {
@@ -238,6 +258,35 @@ export const useGameStore = create<StoreState>((set, get) => {
     setScanned: (scanned) => set({ scanned }),
     togglePad: () => set((s) => ({ padMode: s.padMode === "off" ? "def" : "off" })),
     setBroadcast: (broadcast) => set({ broadcast }),
+    shareCurrentGame: async () => {
+      const s = get();
+      // If already shared, just return the existing link.
+      let cloudId = s.game.cloudId;
+      if (cloudId && s.shareUrl) return s.shareUrl;
+      set({ sharing: true });
+      try {
+        const uid = await ensureAuth();
+        if (!uid) {
+          s.flash("Can't reach the cloud — check your connection");
+          return null;
+        }
+        if (!cloudId) {
+          cloudId = newCloudId();
+          s.dispatch({ type: "SET_CLOUD_ID", cloudId });
+        }
+        await pushGame(get().game);
+        const url = `${window.location.origin}${window.location.pathname}?watch=${cloudId}`;
+        set({ shareUrl: url });
+        s.flash("Live link ready — share it with the broadcaster");
+        return url;
+      } catch (e) {
+        console.error("share failed", e);
+        s.flash("Sharing failed — see console");
+        return null;
+      } finally {
+        set({ sharing: false });
+      }
+    },
 
     flash: (msg) => {
       set({ toast: msg });

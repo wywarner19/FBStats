@@ -50,6 +50,7 @@ export type GameAction =
   | { type: "ADJUST_YARDS"; id: string; delta: number }
   | { type: "TOGGLE_FLAG"; id: string }
   | { type: "SET_QB"; team: TeamId; num: number }
+  | { type: "SET_CLOUD_ID"; cloudId: string }
   | { type: "UPDATE_INFO"; patch: Partial<import("@/lib/types").GameInfo> }
   | { type: "NUDGE_SPOT"; delta: number }
   | { type: "DELETE_PLAY"; id: string }
@@ -340,6 +341,9 @@ export function gameReducer(g: GameState, action: GameAction): GameState {
         updatedAt: Date.now(),
       };
     }
+
+    case "SET_CLOUD_ID":
+      return { ...g, cloudId: action.cloudId, updatedAt: Date.now() };
 
     case "UPDATE_INFO": {
       return {
