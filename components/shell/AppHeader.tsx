@@ -22,6 +22,7 @@ export function AppHeader() {
   const reviewCount = useGameStore(
     (s) => s.game.plays.filter((p) => reviewStatus(p).needsReview).length,
   );
+  const setBroadcast = useGameStore((s) => s.setBroadcast);
 
   return (
     <header className="flex flex-none items-center gap-[18px] h-[58px] px-[18px] bg-panel border-b border-edge">
@@ -54,6 +55,13 @@ export function AppHeader() {
         })}
       </nav>
       <div className="flex-1" />
+      <button
+        onClick={() => setBroadcast(true)}
+        className="flex items-center gap-1.5 min-h-[34px] px-3 bg-panel-4 border border-edge-2 rounded-[8px] text-cloud font-semibold text-[12px] leading-none cursor-pointer hover:border-turf"
+        title="Open the live broadcast dashboard"
+      >
+        📺 Broadcast
+      </button>
       {reviewCount > 0 && (
         <button
           onClick={() => setScreen("chart")}

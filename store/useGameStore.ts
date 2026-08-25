@@ -72,6 +72,7 @@ interface UIState {
   toast: string | null;
   setupStep: number;
   scanned: boolean;
+  broadcast: boolean;
 }
 
 interface StoreState extends UIState {
@@ -91,6 +92,7 @@ interface StoreState extends UIState {
   setSetupStep: (n: number) => void;
   setScanned: (b: boolean) => void;
   togglePad: () => void;
+  setBroadcast: (b: boolean) => void;
   flash: (msg: string) => void;
 
   // draft editing
@@ -203,6 +205,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       toast: null,
       setupStep: 1,
       scanned: false,
+      broadcast: false,
     } as UIState),
 
     game: initial,
@@ -234,6 +237,7 @@ export const useGameStore = create<StoreState>((set, get) => {
     setSetupStep: (setupStep) => set({ setupStep }),
     setScanned: (scanned) => set({ scanned }),
     togglePad: () => set((s) => ({ padMode: s.padMode === "off" ? "def" : "off" })),
+    setBroadcast: (broadcast) => set({ broadcast }),
 
     flash: (msg) => {
       set({ toast: msg });
