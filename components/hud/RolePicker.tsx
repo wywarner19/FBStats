@@ -1,6 +1,7 @@
 "use client";
 
 import type { Player } from "@/lib/types";
+import { jersey } from "@/lib/format";
 import { LABEL, cx } from "@/components/ui";
 
 /** A compact single-select jersey picker used for kicker / holder / snapper. */
@@ -31,7 +32,7 @@ export function RolePicker({
               selected === p.num ? `bg-panel-4 ${ring} text-cloud` : "bg-panel-5 border-edge text-dim",
             )}
           >
-            {p.num || "?"}
+            {jersey(p.num)}
           </button>
         ))}
       </div>

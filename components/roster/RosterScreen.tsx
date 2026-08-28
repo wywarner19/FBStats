@@ -2,6 +2,7 @@
 
 import { useGameStore } from "@/store/useGameStore";
 import type { Player, TeamId } from "@/lib/types";
+import { jersey } from "@/lib/format";
 import { LABEL } from "@/components/ui";
 
 const SCAN_ROWS = [
@@ -31,7 +32,7 @@ function RosterColumn({ team }: { team: TeamId }) {
         {t.roster.map((p: Player) => (
           <div key={p.id} className="flex items-center gap-3.5 bg-panel px-3.5 py-2.5">
             <span className={`w-11 text-center font-cond font-bold text-[20px] leading-none ${numColor}`}>
-              {p.num || "?"}
+              {jersey(p.num)}
             </span>
             {/* Tap the name to edit number/name/position/two-way. */}
             <button
@@ -68,7 +69,7 @@ export function RosterScreen() {
   const flash = useGameStore((s) => s.flash);
 
   const addPlayer = (team: TeamId) =>
-    dispatch({ type: "ADD_PLAYER", team, player: { num: 0, name: "New player — tap to name", pos: "—" } });
+    dispatch({ type: "ADD_PLAYER", team, player: { num: -1, name: "New player — tap to name", pos: "—" } });
 
   const acceptScan = () => {
     dispatch({ type: "ADD_PLAYER", team: "H", player: { num: 3, name: "A. Whitcomb", pos: "WR" } });

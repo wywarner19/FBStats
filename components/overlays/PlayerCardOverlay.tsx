@@ -2,7 +2,7 @@
 
 import { useGameStore } from "@/store/useGameStore";
 import { computeBoxScore } from "@/lib/engine/boxscore";
-import { allPlayers, playText, sitText } from "@/lib/format";
+import { allPlayers, jersey, playText, sitText } from "@/lib/format";
 
 export function PlayerCardOverlay() {
   const game = useGameStore((s) => s.game);
@@ -34,7 +34,7 @@ export function PlayerCardOverlay() {
       <div className="w-full max-w-[560px] bg-panel border border-edge-2 rounded-2xl overflow-hidden animate-fade">
         <div className="flex items-center gap-4 px-6 py-5 bg-panel-3">
           <span className="w-[70px] h-[70px] flex-none rounded-[14px] bg-panel-4 border border-edge-2 grid place-items-center font-cond font-bold text-[34px] leading-none text-turf">
-            {player ? player.num || "?" : "—"}
+            {player ? jersey(player.num) : "—"}
           </span>
           <div className="flex-1">
             <div className="font-cond font-bold text-[26px] leading-[1.05]">{player ? player.name : "Unknown jersey"}</div>

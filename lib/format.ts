@@ -37,10 +37,18 @@ export function allPlayers(setup: GameSetup): Player[] {
   return [...setup.home.roster, ...setup.away.roster];
 }
 
+/**
+ * Display a jersey number. 0 is a legal number, so only the reserved sentinel
+ * (a negative "unknown / not yet numbered" placeholder) shows as "?".
+ */
+export function jersey(num: number | null | undefined): string {
+  return num == null || num < 0 ? "?" : String(num);
+}
+
 /** "#22 D. Whitfield" for a jersey number, searching both rosters. */
 export function who(setup: GameSetup, num: number | null): string {
   if (num == null) return "";
-  if (num === 0) return "#? unnamed";
+  if (num < 0) return "#? unnamed";
   const p = allPlayers(setup).find((x) => x.num === num);
   return p ? `#${p.num} ${p.name}` : `#${num}`;
 }

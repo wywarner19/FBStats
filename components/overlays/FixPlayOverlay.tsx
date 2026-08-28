@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { FIX_YARDS, PENALTIES } from "@/lib/engine/constants";
 import { clampSpot, deriveTimeline, direction, ordinal, resolvePenalty, spotLabel } from "@/lib/engine/rules";
-import { playText, reviewStatus, sitText } from "@/lib/format";
+import { jersey, playText, reviewStatus, sitText } from "@/lib/format";
 import type { PlayEvent, Situation } from "@/lib/types";
 import { OverlayShell } from "./OverlayShell";
 import { LABEL, cx } from "@/components/ui";
@@ -97,7 +97,7 @@ export function FixPlayOverlay() {
           <div className="grid grid-cols-6 gap-[7px] mb-[18px]">
             {teamRoster.map((p) => (
               <button key={p.id} onClick={() => reassign(p.num)} className="min-h-[50px] bg-panel-4 border border-edge-3 rounded-[9px] text-cloud font-cond font-bold text-[18px] leading-none cursor-pointer">
-                {p.num || "?"}
+                {jersey(p.num)}
               </button>
             ))}
           </div>

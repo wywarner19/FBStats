@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
-import { offenseRoster } from "@/lib/format";
+import { offenseRoster, jersey } from "@/lib/format";
 import type { Player } from "@/lib/types";
 import { OverlayShell } from "./OverlayShell";
 import { LABEL, cx } from "@/components/ui";
@@ -210,7 +210,7 @@ function RolePicker({
                 : "bg-panel-5 border-edge text-slate",
             )}
           >
-            {p.num || "?"}
+            {jersey(p.num)}
           </button>
         ))}
       </div>

@@ -2,7 +2,7 @@
 
 import { useGameStore } from "@/store/useGameStore";
 import { PLAY_TYPES, RESULTS } from "@/lib/engine/constants";
-import { offenseRoster, defenseRoster } from "@/lib/format";
+import { offenseRoster, defenseRoster, jersey } from "@/lib/format";
 import type { PlayType } from "@/lib/types";
 import { LABEL } from "@/components/ui";
 
@@ -71,7 +71,7 @@ export function JerseyPadC() {
               onClick={() => (padMode === "off" ? choosePlayer(p.num) : toggleTackler(p.num))}
               className="relative min-h-[76px] bg-panel-4 border border-edge-3 rounded-[11px] cursor-pointer flex flex-col items-center justify-center gap-0.5"
             >
-              <span className="font-cond font-bold text-[28px] leading-none text-cloud">{p.num || "?"}</span>
+              <span className="font-cond font-bold text-[28px] leading-none text-cloud">{jersey(p.num)}</span>
               <span className="font-semi font-semibold text-[10px] leading-none tracking-[.08em] text-dim">{p.pos}</span>
               {sel && <span className="absolute -inset-0.5 border-2 border-turf rounded-[13px]" />}
             </button>

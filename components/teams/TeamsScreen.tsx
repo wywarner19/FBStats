@@ -107,7 +107,7 @@ function TeamCard({
     setDraft((d) => ({ ...d, roster: d.roster.map((p) => (p.id === id ? { ...p, ...patch } : p)) }));
   const savePlayers = (roster: Player[]) => commit({ ...draft, roster });
 
-  const addPlayer = () => savePlayers([...draft.roster, makeRosterPlayer(0, "", "—")]);
+  const addPlayer = () => savePlayers([...draft.roster, makeRosterPlayer(-1, "", "—")]);
   const removePlayer = (id: string) => savePlayers(draft.roster.filter((p) => p.id !== id));
 
   return (
@@ -154,8 +154,8 @@ function TeamCard({
               <div key={p.id} className="flex items-center gap-2">
                 <input
                   type="number"
-                  value={p.num || ""}
-                  onChange={(e) => setPlayer(p.id, { num: parseInt(e.target.value, 10) || 0 })}
+                  value={p.num < 0 ? "" : p.num}
+                  onChange={(e) => setPlayer(p.id, { num: e.target.value === "" ? -1 : parseInt(e.target.value, 10) || 0 })}
                   onBlur={() => onSave(draft)}
                   placeholder="#"
                   className="w-14 h-10 bg-panel-3 border border-edge-3 rounded-[8px] text-center font-cond font-bold text-[16px] text-turf outline-none"

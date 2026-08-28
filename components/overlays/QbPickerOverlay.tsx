@@ -1,7 +1,7 @@
 "use client";
 
 import { useGameStore } from "@/store/useGameStore";
-import { offenseRoster } from "@/lib/format";
+import { offenseRoster, jersey } from "@/lib/format";
 import { OverlayShell } from "./OverlayShell";
 import { LABEL, cx } from "@/components/ui";
 
@@ -44,7 +44,7 @@ export function QbPickerOverlay() {
               current === p.num ? "bg-turf-wash border-turf" : "bg-panel-4 border-edge-3",
             )}
           >
-            <span className="font-cond font-bold text-[22px] leading-none text-cloud">{p.num || "?"}</span>
+            <span className="font-cond font-bold text-[22px] leading-none text-cloud">{jersey(p.num)}</span>
             <span className="font-semi font-semibold text-[10px] leading-none tracking-[.08em] text-dim">{p.pos}</span>
             {current === p.num && (
               <span className="absolute top-1 right-1 font-semi font-bold text-[9px] leading-none tracking-[.1em] text-turf">QB</span>

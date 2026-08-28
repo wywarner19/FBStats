@@ -79,7 +79,10 @@ export type Formation = "Gun" | "Ace" | "Trips" | "Wing" | "Empty";
 export interface Player {
   /** Stable identity, independent of jersey number (numbers can change). */
   id: string;
-  /** Jersey number. 0 is the reserved "unknown jersey" placeholder. */
+  /**
+   * Jersey number. 0 is a legal number (worn by real players); a NEGATIVE value
+   * (-1) is the reserved "unknown / not yet numbered" placeholder, rendered "?".
+   */
   num: number;
   name: string;
   pos: string;

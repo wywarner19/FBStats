@@ -2,7 +2,7 @@
 
 import { useGameStore } from "@/store/useGameStore";
 import { PLAY_TYPES, RESULTS, PERSONNEL, FORMATIONS } from "@/lib/engine/constants";
-import { offenseRoster, defenseRoster } from "@/lib/format";
+import { offenseRoster, defenseRoster, jersey } from "@/lib/format";
 import { PASS_DETAILS, type Formation, type Personnel } from "@/lib/types";
 import { LABEL, cx } from "@/components/ui";
 import { RolePicker } from "./RolePicker";
@@ -34,7 +34,7 @@ export function PadA() {
   const offLabel = `${sit.poss === "H" ? game.setup.home.abbr : game.setup.away.abbr} offense`;
 
   const unknownPlayer = () => {
-    patchDraft({ playerId: 0 }, true);
+    patchDraft({ playerId: -1 }, true);
     flash("Unknown jersey — commit now, name him later in Rosters");
   };
 
@@ -66,7 +66,7 @@ export function PadA() {
             onClick={() => choosePlayer(p.num)}
             className="relative min-h-[58px] bg-panel-4 border border-edge-3 rounded-[10px] cursor-pointer flex flex-col items-center justify-center gap-0.5"
           >
-            <span className="font-cond font-bold text-[21px] leading-none text-cloud">{p.num || "?"}</span>
+            <span className="font-cond font-bold text-[21px] leading-none text-cloud">{jersey(p.num)}</span>
             <span className="font-semi font-semibold text-[10px] leading-none tracking-[.08em] text-dim">{p.pos}</span>
             {(draft.playerId === p.num || draft.targetId === p.num) && (
               <span className="absolute -inset-0.5 border-2 border-turf rounded-xl" />
@@ -125,7 +125,7 @@ export function PadA() {
             onClick={() => toggleTackler(p.num)}
             className="relative min-h-[48px] bg-panel-3 border border-edge-3 rounded-[9px] text-slate font-cond font-bold text-[18px] leading-none cursor-pointer"
           >
-            {p.num || "?"}
+            {jersey(p.num)}
             {draft.tacklers.includes(p.num) && <span className="absolute -inset-0.5 border-2 border-flag rounded-[11px]" />}
           </button>
         ))}

@@ -50,8 +50,8 @@ export function PlayerEditOverlay() {
           <div className="font-semi font-semibold text-[10px] leading-none tracking-[.16em] text-dim mb-2">NUMBER</div>
           <input
             type="number"
-            value={player.num}
-            onChange={(e) => update({ num: parseInt(e.target.value, 10) || 0 })}
+            value={player.num < 0 ? "" : player.num}
+            onChange={(e) => update({ num: e.target.value === "" ? -1 : parseInt(e.target.value, 10) || 0 })}
             className="w-full h-12 bg-panel-3 border border-edge-3 rounded-[9px] text-center font-cond font-bold text-[24px] leading-none text-turf outline-none"
           />
         </label>
