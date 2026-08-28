@@ -22,6 +22,7 @@ import {
 } from "@/lib/engine/reducer";
 import type { GameInfo, TeamProfile } from "@/lib/types";
 import {
+  blankTeamProfile,
   defaultTeamProfile,
   demoGame,
   exampleGame,
@@ -33,6 +34,7 @@ import {
 import {
   deleteGame,
   getMeta,
+  loadAllGames,
   loadGame,
   loadLatestGame,
   loadTeamProfiles,
@@ -192,8 +194,11 @@ interface StoreState extends UIState {
   openGame: (id: string) => Promise<void>;
   createScheduledGame: (opts: {
     profileId: string;
-    opponentName: string;
-    opponentAbbr: string;
+    /** An existing opponent profile to reuse (its roster rolls over). */
+    opponentProfileId?: string;
+    /** Or a brand-new opponent, saved as a profile for future rematches. */
+    opponentName?: string;
+    opponentAbbr?: string;
     date?: string;
     venue?: "home" | "away" | "neutral";
   }) => Promise<void>;
@@ -291,13 +296,30 @@ export const useGameStore = create<StoreState>((set, get) => {
           await setMeta("seeded", true);
         }
         // Tonight's real game (Columbia City @ Northridge) with both rosters.
-        if (!(await getMeta<boolean>("seed-ccnr-v1"))) {
-          const { home, away, game } = tonightSeed();
+        // v2: the user coaches Columbia City, so CC is the "your team" (HOME in
+        // the data model) and Northridge is the opponent profile. If an earlier
+        // build seeded this the other way round, replace that game (unless it's
+        // already been scored) and fix the two profiles.
+        if (!(await getMeta<boolean>("seed-ccnr-v2"))) {
+          const { mine, opponent, game } = tonightSeed();
+          const isCcNr = (g: GameState) => {
+            const names = new Set([g.setup.home.name, g.setup.away.name]);
+            return names.has(mine.name) && names.has(opponent.name);
+          };
+          const scored = (g: GameState) => g.plays.some((p) => p.kind !== "Control");
+          const allGames = await loadAllGames();
+          for (const g of allGames) if (isCcNr(g) && !scored(g)) await deleteGame(g.id);
+
           const existing = await loadTeamProfiles();
-          if (!existing.some((t) => t.name === home.name)) await saveTeamProfile(home);
-          if (!existing.some((t) => t.name === away.name)) await saveTeamProfile(away);
-          await saveGame(game);
-          await setMeta("seed-ccnr-v1", true);
+          const upsert = async (name: string, next: TeamProfile) => {
+            const prior = existing.find((t) => t.name === name);
+            await saveTeamProfile(prior ? { ...next, id: prior.id } : next);
+            return prior ? prior.id : next.id;
+          };
+          const mineId = await upsert(mine.name, mine);
+          const oppId = await upsert(opponent.name, opponent);
+          await saveGame({ ...game, teamProfileId: mineId, opponentProfileId: oppId });
+          await setMeta("seed-ccnr-v2", true);
         }
         const teams = await loadTeamProfiles();
         const currentId = await getMeta<string>("currentGameId");
@@ -591,14 +613,39 @@ export const useGameStore = create<StoreState>((set, get) => {
       const s = get();
       const profile = s.teamProfiles.find((t) => t.id === opts.profileId);
       if (!profile) return s.flash("Pick your team first");
+
+      // Resolve the opponent: an existing profile (roster rolls over) or a new
+      // one we save so it's reusable next time these teams meet.
+      let opp = opts.opponentProfileId
+        ? s.teamProfiles.find((t) => t.id === opts.opponentProfileId)
+        : undefined;
+      if (!opp) {
+        const name = opts.opponentName?.trim();
+        if (!name && !opts.opponentAbbr) return s.flash("Name the opponent");
+        opp = {
+          ...blankTeamProfile(name || "Opponent", opts.opponentAbbr || (name || "OPP").slice(0, 3).toUpperCase(), false),
+        };
+        await saveTeamProfile(opp);
+        set({ teamProfiles: [opp, ...get().teamProfiles] });
+      }
+
+      // Roll over the freshest roster we have for this opponent: the away roster
+      // of the most recent prior meeting (captures players added mid-game),
+      // else the opponent profile's own roster.
+      const games = await loadAllGames();
+      const prior = games
+        .filter((g) => g.opponentProfileId === opp!.id)
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      const roster = prior && prior.setup.away.roster.length ? prior.setup.away.roster : opp.roster;
+
       const g = gameFromProfile(
         profile,
-        { name: opts.opponentName || "Opponent", abbr: opts.opponentAbbr || "OPP" },
+        { name: opp.name, abbr: opp.abbr, roster, id: opp.id },
         { date: opts.date, venue: opts.venue },
       );
       await saveGame(g);
-      set({ gamesRefresh: s.gamesRefresh + 1 });
-      s.flash(`Added ${opts.date ? opts.date + " · " : ""}vs ${opts.opponentAbbr || opts.opponentName}`);
+      set({ gamesRefresh: get().gamesRefresh + 1 });
+      s.flash(`Added ${opts.date ? opts.date + " · " : ""}vs ${opp.abbr}${roster.length ? ` · ${roster.length} on roster` : ""}`);
     },
     removeGame: async (id) => {
       const s = get();

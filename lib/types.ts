@@ -106,6 +106,13 @@ export interface TeamProfile {
   abbr: string;
   roster: Roster;
   updatedAt: number;
+  /**
+   * True (or undefined, for backward compatibility) for one of the user's own
+   * teams — these become HOME in the data model and season stats roll up to
+   * them. `false` marks an opponent profile: saved so its roster rolls over to
+   * the next meeting (e.g. a postseason rematch), but never a "your team".
+   */
+  mine?: boolean;
 }
 
 export interface Penalty {
@@ -285,6 +292,8 @@ export interface GameState {
   cloudId?: string;
   /** Which of the user's team profiles this game belongs to (setup.home). */
   teamProfileId?: string;
+  /** The opponent profile (setup.away), so its roster rolls over on a rematch. */
+  opponentProfileId?: string;
   /** Venue relative to the user's team, for the schedule label. */
   venue?: "home" | "away" | "neutral";
   /** A built-in example game shown in the schedule; not one of the user's. */

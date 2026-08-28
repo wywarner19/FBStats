@@ -14,11 +14,25 @@ export function TeamsScreen() {
   const removeTeam = useGameStore((s) => s.removeTeam);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const addTeam = async () => {
-    const t = blankTeamProfile("New team", "NEW");
+  const addTeam = async (mine: boolean) => {
+    const t = blankTeamProfile(mine ? "New team" : "New opponent", "NEW", mine);
     await saveTeam(t);
     setOpenId(t.id);
   };
+
+  const myTeams = teamProfiles.filter((t) => t.mine !== false);
+  const opponents = teamProfiles.filter((t) => t.mine === false);
+
+  const card = (t: TeamProfile) => (
+    <TeamCard
+      key={t.id}
+      team={t}
+      open={openId === t.id}
+      onToggle={() => setOpenId(openId === t.id ? null : t.id)}
+      onSave={saveTeam}
+      onRemove={() => removeTeam(t.id)}
+    />
+  );
 
   return (
     <div className="flex-1 overflow-auto px-7 pt-6 pb-16">
@@ -27,7 +41,7 @@ export function TeamsScreen() {
           <h2 className="m-0 font-cond font-bold text-[32px] leading-none">Your teams</h2>
           <span className="font-medium text-[14px] leading-none text-dim">saved to this device</span>
           <div className="flex-1" />
-          <button onClick={addTeam} className="min-h-[44px] px-4 bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[14px] tracking-[.06em] cursor-pointer">
+          <button onClick={() => addTeam(true)} className="min-h-[44px] px-4 bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[14px] tracking-[.06em] cursor-pointer">
             + Add team
           </button>
         </div>
@@ -36,21 +50,33 @@ export function TeamsScreen() {
         </p>
 
         <div className="flex flex-col gap-3">
-          {teamProfiles.length === 0 && (
+          {myTeams.length === 0 && (
             <div className="bg-panel border border-edge rounded-xl px-5 py-8 text-[14px] text-dim-2">
               No teams yet. Tap <span className="text-turf font-semibold">+ Add team</span> to create one.
             </div>
           )}
-          {teamProfiles.map((t) => (
-            <TeamCard
-              key={t.id}
-              team={t}
-              open={openId === t.id}
-              onToggle={() => setOpenId(openId === t.id ? null : t.id)}
-              onSave={saveTeam}
-              onRemove={() => removeTeam(t.id)}
-            />
-          ))}
+          {myTeams.map(card)}
+        </div>
+
+        <div className="flex items-center gap-3 mt-9 mb-2 flex-wrap">
+          <h2 className="m-0 font-cond font-bold text-[26px] leading-none">Opponents</h2>
+          <span className="font-medium text-[14px] leading-none text-dim">rosters roll over to rematches</span>
+          <div className="flex-1" />
+          <button onClick={() => addTeam(false)} className="min-h-[40px] px-4 bg-panel-4 border border-edge-2 rounded-[10px] text-cloud font-cond font-bold text-[13px] tracking-[.06em] cursor-pointer hover:border-turf">
+            + Add opponent
+          </button>
+        </div>
+        <p className="m-0 mb-5 max-w-[640px] text-[13px] leading-[1.5] text-dim-2">
+          Teams you play. Each is saved automatically the first time you schedule them; the roster you build here (or during the game) carries over the next time you meet.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {opponents.length === 0 && (
+            <div className="bg-panel border border-edge rounded-xl px-5 py-6 text-[13px] text-dim-2">
+              No opponents yet — they appear here once you add a game.
+            </div>
+          )}
+          {opponents.map(card)}
         </div>
       </div>
     </div>

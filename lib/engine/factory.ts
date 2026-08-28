@@ -170,12 +170,13 @@ export function defaultTeamProfile(): TeamProfile {
     abbr: "NGT",
     roster: toRoster(SEED_HOME),
     updatedAt: Date.now(),
+    mine: true,
   };
 }
 
-/** A blank team profile the user fills in. */
-export function blankTeamProfile(name = "", abbr = ""): TeamProfile {
-  return { id: id("team"), name, abbr, roster: [], updatedAt: Date.now() };
+/** A blank team profile the user fills in (a your-team by default). */
+export function blankTeamProfile(name = "", abbr = "", mine = true): TeamProfile {
+  return { id: id("team"), name, abbr, roster: [], updatedAt: Date.now(), mine };
 }
 
 export function makeRosterPlayer(num: number, name: string, pos: string): Player {
@@ -188,38 +189,41 @@ export function makeRosterPlayer(num: number, name: string, pos: string): Player
  */
 /**
  * Tonight's real game: Columbia City @ Northridge, with both full 26-27 varsity
- * rosters loaded. Northridge hosts, so it is HOME; Columbia City is away.
+ * rosters loaded. The user coaches Columbia City, so CC is the "your team" that
+ * owns the game (HOME in the data model, season stats roll up to it) even though
+ * they play at Northridge — hence venue "away". Northridge is the opponent
+ * profile so its roster rolls over if the teams meet again.
  */
-export function tonightSeed(): { home: TeamProfile; away: TeamProfile; game: GameState } {
-  const home: TeamProfile = {
-    id: id("team"),
-    name: "Northridge Raiders",
-    abbr: "NR",
-    roster: toRoster(NORTHRIDGE_ROSTER),
-    updatedAt: Date.now(),
-  };
-  const away: TeamProfile = {
+export function tonightSeed(): { mine: TeamProfile; opponent: TeamProfile; game: GameState } {
+  const mine: TeamProfile = {
     id: id("team"),
     name: "Columbia City Eagles",
     abbr: "CC",
     roster: toRoster(COLUMBIA_CITY_ROSTER),
     updatedAt: Date.now(),
+    mine: true,
   };
-  const setup: GameSetup = {
-    home: { id: "H", name: home.name, abbr: home.abbr, roster: home.roster.map((p) => ({ ...p })) },
-    away: { id: "A", name: away.name, abbr: away.abbr, roster: away.roster.map((p) => ({ ...p })) },
-    quarterLengthSec: 12 * 60,
-    kickoff: "",
-    meta: "",
-    info: { date: "Tonight", location: "Home", weather: "", surface: "Turf", officials: "", attendance: "" },
+  const opponent: TeamProfile = {
+    id: id("team"),
+    name: "Northridge Raiders",
+    abbr: "NR",
+    roster: toRoster(NORTHRIDGE_ROSTER),
+    updatedAt: Date.now(),
+    mine: false,
   };
-  const g = newGame(setup);
-  return { home, away, game: { ...g, teamProfileId: home.id, venue: "home" } };
+  const game = gameFromProfile(mine, opponent, { date: "Tonight", venue: "away" });
+  return { mine, opponent, game };
 }
 
+/**
+ * Create a fresh, scoreless game for the schedule from one of the user's team
+ * profiles (HOME in the data model) versus an opponent. Passing the opponent's
+ * `roster` (from its profile or the last meeting) rolls it over so it isn't
+ * re-entered; `id` links the game to the opponent profile for future rematches.
+ */
 export function gameFromProfile(
   profile: TeamProfile,
-  opponent: { name: string; abbr: string },
+  opponent: { name: string; abbr: string; roster?: Player[]; id?: string },
   opts: { date?: string; venue?: "home" | "away" | "neutral" } = {},
 ): GameState {
   const home: Team = {
@@ -228,7 +232,12 @@ export function gameFromProfile(
     abbr: profile.abbr,
     roster: profile.roster.map((p) => ({ ...p })),
   };
-  const away: Team = { id: "A", name: opponent.name, abbr: opponent.abbr, roster: [] };
+  const away: Team = {
+    id: "A",
+    name: opponent.name,
+    abbr: opponent.abbr,
+    roster: (opponent.roster ?? []).map((p) => ({ ...p })),
+  };
   const setup: GameSetup = {
     home,
     away,
@@ -245,5 +254,10 @@ export function gameFromProfile(
     },
   };
   const g = newGame(setup);
-  return { ...g, teamProfileId: profile.id, venue: opts.venue ?? "home" };
+  return {
+    ...g,
+    teamProfileId: profile.id,
+    opponentProfileId: opponent.id,
+    venue: opts.venue ?? "home",
+  };
 }

@@ -24,7 +24,8 @@ export function SeasonScreen() {
     loadAllGames()
       .then((games) => {
         if (!live) return;
-        const names = new Set<string>(teamProfiles.map((t) => t.name));
+        // Your teams only — opponents (mine === false) never aggregate here.
+        const names = new Set<string>(teamProfiles.filter((t) => t.mine !== false).map((t) => t.name));
         games.forEach((g) => names.add(g.setup.home.name));
         setTeamOptions([...names]);
         setAgg(aggregateSeason(games, teamName));

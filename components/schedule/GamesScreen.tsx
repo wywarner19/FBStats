@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
-import type { GameState } from "@/lib/types";
+import type { GameState, TeamProfile } from "@/lib/types";
 import { deriveSituation } from "@/lib/engine/rules";
 import { loadAllGames } from "@/lib/db/dexie";
 import { LABEL, cx } from "@/components/ui";
@@ -136,18 +136,23 @@ function AddGameForm({
   onDone,
   goTeams,
 }: {
-  profiles: { id: string; name: string; abbr: string }[];
-  onCreate: (o: { profileId: string; opponentName: string; opponentAbbr: string; date?: string; venue?: "home" | "away" | "neutral" }) => Promise<void>;
+  profiles: TeamProfile[];
+  onCreate: (o: { profileId: string; opponentProfileId?: string; opponentName?: string; opponentAbbr?: string; date?: string; venue?: "home" | "away" | "neutral" }) => Promise<void>;
   onDone: () => void;
   goTeams: () => void;
 }) {
-  const [profileId, setProfileId] = useState(profiles[0]?.id ?? "");
+  const myTeams = profiles.filter((p) => p.mine !== false);
+  const opponents = profiles.filter((p) => p.mine === false);
+
+  const [profileId, setProfileId] = useState(myTeams[0]?.id ?? "");
+  // "" sentinel = a brand-new opponent (show name/abbr inputs).
+  const [oppId, setOppId] = useState<string>(opponents[0]?.id ?? "");
   const [oppName, setOppName] = useState("");
   const [oppAbbr, setOppAbbr] = useState("");
   const [date, setDate] = useState("");
   const [venue, setVenue] = useState<"home" | "away" | "neutral">("home");
 
-  if (profiles.length === 0) {
+  if (myTeams.length === 0) {
     return (
       <div className="mb-4 bg-panel border border-edge rounded-xl p-5 text-[14px] text-dim">
         You need a team profile first.{" "}
@@ -156,9 +161,14 @@ function AddGameForm({
     );
   }
 
+  const isNew = oppId === "";
   const submit = async () => {
-    if (!oppName && !oppAbbr) return;
-    await onCreate({ profileId, opponentName: oppName, opponentAbbr: oppAbbr || oppName.slice(0, 3).toUpperCase(), date, venue });
+    if (isNew) {
+      if (!oppName.trim() && !oppAbbr) return;
+      await onCreate({ profileId, opponentName: oppName, opponentAbbr: oppAbbr || oppName.slice(0, 3).toUpperCase(), date, venue });
+    } else {
+      await onCreate({ profileId, opponentProfileId: oppId, date, venue });
+    }
     setOppName("");
     setOppAbbr("");
     setDate("");
@@ -174,7 +184,7 @@ function AddGameForm({
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] text-dim">YOUR TEAM</span>
           <select value={profileId} onChange={(e) => setProfileId(e.target.value)} className={input}>
-            {profiles.map((p) => (
+            {myTeams.map((p) => (
               <option key={p.id} value={p.id}>{p.name} ({p.abbr})</option>
             ))}
           </select>
@@ -185,12 +195,31 @@ function AddGameForm({
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] text-dim">OPPONENT</span>
-          <input value={oppName} onChange={(e) => setOppName(e.target.value)} placeholder="Riverton Prep" className={input} />
+          <select value={oppId} onChange={(e) => setOppId(e.target.value)} className={input}>
+            {opponents.map((p) => (
+              <option key={p.id} value={p.id}>{p.name} ({p.abbr}){p.roster.length ? ` · ${p.roster.length}` : ""}</option>
+            ))}
+            <option value="">＋ New opponent…</option>
+          </select>
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] text-dim">OPP ABBR</span>
-          <input value={oppAbbr} onChange={(e) => setOppAbbr(e.target.value.toUpperCase().slice(0, 4))} placeholder="RVT" className={input} />
-        </label>
+        {isNew ? (
+          <div className="grid grid-cols-[1fr_90px] gap-2">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-dim">NAME</span>
+              <input value={oppName} onChange={(e) => setOppName(e.target.value)} placeholder="Riverton Prep" className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-dim">ABBR</span>
+              <input value={oppAbbr} onChange={(e) => setOppAbbr(e.target.value.toUpperCase().slice(0, 4))} placeholder="RVT" className={input} />
+            </label>
+          </div>
+        ) : (
+          <div className="flex items-end">
+            <p className="m-0 text-[12px] leading-snug text-dim-2">
+              Their roster rolls over from your last meeting — edit it any time under <button onClick={goTeams} className="text-turf font-semibold cursor-pointer">Teams</button>.
+            </p>
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-2 mb-3">
         <span className="text-[11px] text-dim">VENUE</span>
