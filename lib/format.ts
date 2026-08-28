@@ -109,18 +109,26 @@ export function possAbbr(g: GameState, s: Situation): string {
  * auto "edited after commit" mark, and live detection of missing critical
  * info (a tackle with no tackler, a pass with no intended receiver).
  */
-export function reviewStatus(p: PlayEvent): { needsReview: boolean; reasons: string[] } {
+export function reviewStatus(
+  p: PlayEvent,
+  setup?: GameSetup,
+): { needsReview: boolean; reasons: string[] } {
   const reasons: string[] = [];
   if (p.review?.flagged) reasons.push("Flagged for review");
   if (p.review?.edited) reasons.push("Edited after commit");
 
+  // Don't flag missing info that can't be recorded because the relevant roster
+  // is empty (e.g. an opponent with no roster loaded) — that's just noise.
+  const defenders = setup ? (p.poss === "H" ? setup.away.roster : setup.home.roster).length : 1;
+  const offense = setup ? (p.poss === "H" ? setup.home.roster : setup.away.roster).length : 1;
+
   const tackled =
     (p.kind === "Run" || p.kind === "Sack") &&
     (p.result === "Tackle" || p.result === "First down");
-  if (tackled && (!p.tacklers || p.tacklers.length === 0)) {
+  if (tackled && defenders > 0 && (!p.tacklers || p.tacklers.length === 0)) {
     reasons.push("No tackler");
   }
-  if (p.kind === "Pass" && p.targetId == null) {
+  if (p.kind === "Pass" && offense > 0 && p.targetId == null) {
     reasons.push("No intended receiver");
   }
 

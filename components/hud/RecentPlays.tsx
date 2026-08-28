@@ -32,7 +32,7 @@ export function RecentPlays() {
             <span className="flex-1 font-medium text-[14px] leading-[1.25] text-mist">
               {playText(game.setup, play)}
             </span>
-            {reviewStatus(play).needsReview && (
+            {reviewStatus(play, game.setup).needsReview && (
               <span className="flex-none px-1.5 py-0.5 bg-flag-ink rounded font-bold text-[9px] leading-none tracking-[.08em] text-flag">
                 REVIEW
               </span>

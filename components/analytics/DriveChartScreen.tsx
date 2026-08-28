@@ -43,7 +43,7 @@ export function DriveChartScreen() {
       text: playText(game.setup, play),
       flag: play.kind === "Penalty",
       td: play.result === "Touchdown",
-      review: reviewStatus(play),
+      review: reviewStatus(play, game.setup),
       onFix: () => openFix(play.id),
     }))
     .reverse();

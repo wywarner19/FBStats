@@ -35,7 +35,7 @@ export function AppHeader() {
   const home = useGameStore((s) => s.game.setup.home.abbr);
   const away = useGameStore((s) => s.game.setup.away.abbr);
   const reviewCount = useGameStore(
-    (s) => s.game.plays.filter((p) => reviewStatus(p).needsReview).length,
+    (s) => s.game.plays.filter((p) => reviewStatus(p, s.game.setup).needsReview).length,
   );
 
   const nav = inGame ? GAME_NAV : HOME_NAV;

@@ -24,7 +24,7 @@ export function FixPlayOverlay() {
 
   const isPenalty = play.kind === "Penalty";
   const teamRoster = play.poss === "H" ? game.setup.home.roster : game.setup.away.roster;
-  const review = reviewStatus(play);
+  const review = reviewStatus(play, game.setup);
   const atSnap = deriveTimeline(game.setup, game.plays, game.anchor).find((t) => t.play.id === play.id)?.atSnap;
 
   const adjustYards = (v: number) => adjustPlayYards(play.id, v);
