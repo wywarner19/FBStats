@@ -227,6 +227,8 @@ export interface PlayDraft {
   kicker: number | null;
   holder: number | null;
   snapper: number | null;
+  /** Flag the committed play for review (e.g. a placeholder player was created). */
+  flag?: boolean;
 }
 
 /** The live, fully-derived situation. Never stored — always folded. */

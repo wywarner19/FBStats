@@ -6,6 +6,7 @@ import { offenseRoster, defenseRoster } from "@/lib/format";
 import { PASS_DETAILS, type Formation, type Personnel } from "@/lib/types";
 import { LABEL, cx } from "@/components/ui";
 import { RolePicker } from "./RolePicker";
+import { NumberEntry } from "./NumberEntry";
 
 export function PadA() {
   const game = useGameStore((s) => s.game);
@@ -15,6 +16,8 @@ export function PadA() {
   const chooseResult = useGameStore((s) => s.chooseResult);
   const choosePlayer = useGameStore((s) => s.choosePlayer);
   const toggleTackler = useGameStore((s) => s.toggleTackler);
+  const enterBallNumber = useGameStore((s) => s.enterBallNumber);
+  const enterTacklerNumber = useGameStore((s) => s.enterTacklerNumber);
   const setForm = useGameStore((s) => s.setForm);
   const setPers = useGameStore((s) => s.setPers);
   const setPassDetail = useGameStore((s) => s.setPassDetail);
@@ -51,9 +54,10 @@ export function PadA() {
         ))}
       </div>
 
-      <div className="flex items-baseline justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         <span className={`${LABEL} text-[10px]`}>{ballLabel}</span>
-        <span className="font-medium text-[11px] leading-none text-dim-2">{offLabel}</span>
+        <NumberEntry onEnter={enterBallNumber} label="type #" />
+        <span className="font-medium text-[11px] leading-none text-dim-2 ml-auto">{offLabel}</span>
       </div>
       <div className="grid grid-cols-4 gap-[7px] mb-3.5">
         {off.map((p) => (
@@ -110,7 +114,10 @@ export function PadA() {
         </div>
       )}
 
-      <div className={`${LABEL} text-[10px] mb-2`}>TACKLED BY — TAP TWO FOR AN ASSIST</div>
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <span className={`${LABEL} text-[10px]`}>TACKLED BY — TAP TWO FOR AN ASSIST</span>
+        <NumberEntry onEnter={enterTacklerNumber} label="type #" />
+      </div>
       <div className="grid grid-cols-5 gap-1.5 mb-3.5">
         {def.map((p) => (
           <button

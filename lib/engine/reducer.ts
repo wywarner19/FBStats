@@ -152,6 +152,7 @@ export function draftToPlay(
       result === "Touchdown"
         ? { team: sit.poss, kind: "TD", points: 6 }
         : null,
+    review: draft.flag ? { flagged: true } : undefined,
   };
 }
 

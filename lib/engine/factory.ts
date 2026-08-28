@@ -7,6 +7,7 @@ import type {
   TeamProfile,
 } from "@/lib/types";
 import { SEED_AWAY, SEED_HOME } from "./constants";
+import { COLUMBIA_CITY_ROSTER, NORTHRIDGE_ROSTER } from "./gameSeeds";
 
 let counter = 0;
 function id(prefix: string): string {
@@ -185,6 +186,37 @@ export function makeRosterPlayer(num: number, name: string, pos: string): Player
  * Create a fresh, scoreless game for the schedule from one of the user's team
  * profiles (which becomes HOME in the data model) versus a named opponent.
  */
+/**
+ * Tonight's real game: Columbia City @ Northridge, with both full 26-27 varsity
+ * rosters loaded. Northridge hosts, so it is HOME; Columbia City is away.
+ */
+export function tonightSeed(): { home: TeamProfile; away: TeamProfile; game: GameState } {
+  const home: TeamProfile = {
+    id: id("team"),
+    name: "Northridge Raiders",
+    abbr: "NR",
+    roster: toRoster(NORTHRIDGE_ROSTER),
+    updatedAt: Date.now(),
+  };
+  const away: TeamProfile = {
+    id: id("team"),
+    name: "Columbia City Eagles",
+    abbr: "CC",
+    roster: toRoster(COLUMBIA_CITY_ROSTER),
+    updatedAt: Date.now(),
+  };
+  const setup: GameSetup = {
+    home: { id: "H", name: home.name, abbr: home.abbr, roster: home.roster.map((p) => ({ ...p })) },
+    away: { id: "A", name: away.name, abbr: away.abbr, roster: away.roster.map((p) => ({ ...p })) },
+    quarterLengthSec: 12 * 60,
+    kickoff: "",
+    meta: "",
+    info: { date: "Tonight", location: "Home", weather: "", surface: "Turf", officials: "", attendance: "" },
+  };
+  const g = newGame(setup);
+  return { home, away, game: { ...g, teamProfileId: home.id, venue: "home" } };
+}
+
 export function gameFromProfile(
   profile: TeamProfile,
   opponent: { name: string; abbr: string },

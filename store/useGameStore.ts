@@ -28,6 +28,7 @@ import {
   gameFromProfile,
   newGame as createNewGame,
   normalizeGame,
+  tonightSeed,
 } from "@/lib/engine/factory";
 import {
   deleteGame,
@@ -136,6 +137,9 @@ interface StoreState extends UIState {
   choosePlayer: (num: number) => void;
   chooseTarget: (num: number) => void;
   toggleTackler: (num: number) => void;
+  /** Type a jersey #: use the existing player, or create a placeholder + flag. */
+  enterBallNumber: (num: number) => void;
+  enterTacklerNumber: (num: number) => void;
   setForm: (f: Formation) => void;
   setPers: (p: Personnel) => void;
   setHash: (h: Hash) => void;
@@ -286,6 +290,15 @@ export const useGameStore = create<StoreState>((set, get) => {
           await saveTeamProfile(defaultTeamProfile());
           await setMeta("seeded", true);
         }
+        // Tonight's real game (Columbia City @ Northridge) with both rosters.
+        if (!(await getMeta<boolean>("seed-ccnr-v1"))) {
+          const { home, away, game } = tonightSeed();
+          const existing = await loadTeamProfiles();
+          if (!existing.some((t) => t.name === home.name)) await saveTeamProfile(home);
+          if (!existing.some((t) => t.name === away.name)) await saveTeamProfile(away);
+          await saveGame(game);
+          await setMeta("seed-ccnr-v1", true);
+        }
         const teams = await loadTeamProfiles();
         const currentId = await getMeta<string>("currentGameId");
         let active = currentId ? await loadGame(currentId) : undefined;
@@ -385,6 +398,28 @@ export const useGameStore = create<StoreState>((set, get) => {
       get().patchDraft({
         tacklers: t.includes(num) ? t.filter((x) => x !== num) : [...t, num].slice(-2),
       });
+    },
+    enterBallNumber: (num) => {
+      const s = get();
+      const team = s.situation.poss;
+      const roster = team === "H" ? s.game.setup.home.roster : s.game.setup.away.roster;
+      if (!roster.some((p) => p.num === num)) {
+        s.dispatch({ type: "ADD_PLAYER", team, player: { num, name: `#${num} — add name`, pos: "—" } });
+        s.patchDraft({ flag: true });
+        s.flash(`New #${num} added — flagged; name him at a break`);
+      }
+      s.choosePlayer(num);
+    },
+    enterTacklerNumber: (num) => {
+      const s = get();
+      const team = s.situation.poss === "H" ? "A" : "H"; // defense
+      const roster = team === "H" ? s.game.setup.home.roster : s.game.setup.away.roster;
+      if (!roster.some((p) => p.num === num)) {
+        s.dispatch({ type: "ADD_PLAYER", team, player: { num, name: `#${num} — add name`, pos: "—" } });
+        s.patchDraft({ flag: true });
+        s.flash(`New defender #${num} added — flagged; name him at a break`);
+      }
+      s.toggleTackler(num);
     },
     setForm: (f) => get().patchDraft({ form: f }),
     setPers: (p) => get().patchDraft({ pers: p }),
