@@ -18,6 +18,7 @@ function RosterColumn({ team }: { team: TeamId }) {
   const game = useGameStore((s) => s.game);
   const openCard = useGameStore((s) => s.openCard);
   const openEdit = useGameStore((s) => s.openEdit);
+  const openAddPlayer = useGameStore((s) => s.openAddPlayer);
   const t = team === "H" ? game.setup.home : game.setup.away;
   const numColor = team === "H" ? "text-turf" : "text-flag";
   const heading = team === "H" ? `${t.name} — HOME` : `${t.name} — OPPONENT`;
@@ -25,8 +26,17 @@ function RosterColumn({ team }: { team: TeamId }) {
 
   return (
     <div>
-      <div className={`font-semi font-semibold text-[11px] leading-none tracking-[.18em] mb-2.5 uppercase ${headColor}`}>
-        {heading}
+      <div className="flex items-center gap-2 mb-2.5">
+        <div className={`font-semi font-semibold text-[11px] leading-none tracking-[.18em] uppercase ${headColor}`}>
+          {heading}
+        </div>
+        <div className="flex-1" />
+        <button
+          onClick={() => openAddPlayer(team)}
+          className="min-h-[34px] px-3 bg-panel-4 border border-edge-2 rounded-[8px] text-cloud font-semibold text-[12px] cursor-pointer hover:border-turf"
+        >
+          + Add player
+        </button>
       </div>
       <div className="flex flex-col gap-px bg-edge border border-edge rounded-[11px] overflow-hidden">
         {t.roster.map((p: Player) => (
@@ -68,9 +78,6 @@ export function RosterScreen() {
   const dispatch = useGameStore((s) => s.dispatch);
   const flash = useGameStore((s) => s.flash);
 
-  const addPlayer = (team: TeamId) =>
-    dispatch({ type: "ADD_PLAYER", team, player: { num: -1, name: "New player — tap to name", pos: "—" } });
-
   const acceptScan = () => {
     dispatch({ type: "ADD_PLAYER", team: "H", player: { num: 3, name: "A. Whitcomb", pos: "WR" } });
     dispatch({ type: "ADD_PLAYER", team: "H", player: { num: 15, name: "D. Marchetti", pos: "QB" } });
@@ -86,19 +93,14 @@ export function RosterScreen() {
           <span className="px-2.5 py-[5px] bg-flag-ink border border-flag-edge rounded-[20px] font-semibold text-[11px] leading-none tracking-[.08em] text-flag">
             EDITABLE MID-GAME
           </span>
-          <div className="flex-1" />
-          <button
-            onClick={() => addPlayer("H")}
-            className="min-h-[42px] px-4 bg-panel-4 border border-edge-2 rounded-[9px] text-cloud font-semibold text-[13px] cursor-pointer hover:border-dim"
-          >
-            + Add player
-          </button>
         </div>
         <p className="m-0 mb-[18px] max-w-[720px] text-[14px] leading-[1.5] text-dim">
-          A number you have never seen shows up on the field: add it here, or
-          tap the <span className="text-flag font-semibold">?</span> tile in the
-          jersey pad during entry — the play commits against a placeholder and
-          back-fills the moment you name him.
+          Tap <span className="text-cloud font-semibold">+ Add player</span> on
+          either team to enter number, name and position — use{" "}
+          <span className="text-turf font-semibold">Save &amp; add another</span>{" "}
+          to rattle off a roster. Tap any player&apos;s name to edit. Or during
+          entry, tap the <span className="text-flag font-semibold">?</span> tile
+          to commit against an unknown jersey and back-fill later.
         </p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <RosterColumn team="H" />

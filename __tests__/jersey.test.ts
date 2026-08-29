@@ -15,10 +15,10 @@ describe("jersey display", () => {
     expect(jersey(12)).toBe("12");
   });
 
-  it("shows the reserved negative sentinel (and null) as '?'", () => {
-    expect(jersey(-1)).toBe("?");
-    expect(jersey(null)).toBe("?");
-    expect(jersey(undefined)).toBe("?");
+  it("shows the reserved negative sentinel (and null) as the '#' prompt", () => {
+    expect(jersey(-1)).toBe("#");
+    expect(jersey(null)).toBe("#");
+    expect(jersey(undefined)).toBe("#");
   });
 });
 

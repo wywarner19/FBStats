@@ -64,6 +64,7 @@ export type Overlay =
   | "fix"
   | "card"
   | "edit"
+  | "addPlayer"
   | "qb"
   | "timeout"
   | "kickoff"
@@ -89,6 +90,7 @@ interface UIState {
   cardNum: number | null;
   editTeam: TeamId;
   editId: string | null;
+  addTeam: TeamId;
   kickoffCtx: KickoffCtx | null;
   editingTime: boolean;
   timeInput: string;
@@ -184,6 +186,7 @@ interface StoreState extends UIState {
   openFix: (id: string) => void;
   openCard: (num: number) => void;
   openEdit: (team: TeamId, id: string) => void;
+  openAddPlayer: (team: TeamId) => void;
   openQbPicker: () => void;
 
   // game info / season
@@ -267,6 +270,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       cardNum: null,
       editTeam: "H",
       editId: null,
+      addTeam: "H",
       kickoffCtx: null,
       editingTime: false,
       timeInput: "",
@@ -589,6 +593,7 @@ export const useGameStore = create<StoreState>((set, get) => {
     openFix: (id) => set({ overlay: "fix", fixId: id }),
     openCard: (num) => set({ overlay: "card", cardNum: num }),
     openEdit: (team, id) => set({ overlay: "edit", editTeam: team, editId: id }),
+    openAddPlayer: (team) => set({ overlay: "addPlayer", addTeam: team }),
     openQbPicker: () => set({ overlay: "qb" }),
 
     updateInfo: (patch) => get().dispatch({ type: "UPDATE_INFO", patch }),

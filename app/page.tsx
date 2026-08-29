@@ -21,6 +21,7 @@ import { HalftimeOverlay } from "@/components/overlays/HalftimeOverlay";
 import { FixPlayOverlay } from "@/components/overlays/FixPlayOverlay";
 import { PlayerCardOverlay } from "@/components/overlays/PlayerCardOverlay";
 import { PlayerEditOverlay } from "@/components/overlays/PlayerEditOverlay";
+import { AddPlayerOverlay } from "@/components/overlays/AddPlayerOverlay";
 import { TryConversionOverlay } from "@/components/overlays/TryConversionOverlay";
 import { QbPickerOverlay } from "@/components/overlays/QbPickerOverlay";
 import { TimeoutOverlay } from "@/components/overlays/TimeoutOverlay";
@@ -75,6 +76,7 @@ export default function Page() {
       {overlay === "fix" && <FixPlayOverlay />}
       {overlay === "card" && <PlayerCardOverlay />}
       {overlay === "edit" && <PlayerEditOverlay />}
+      {overlay === "addPlayer" && <AddPlayerOverlay />}
       {overlay === "qb" && <QbPickerOverlay />}
       {overlay === "timeout" && <TimeoutOverlay />}
       {overlay === "kickoff" && <KickoffOverlay />}

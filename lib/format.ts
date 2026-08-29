@@ -39,10 +39,11 @@ export function allPlayers(setup: GameSetup): Player[] {
 
 /**
  * Display a jersey number. 0 is a legal number, so only the reserved sentinel
- * (a negative "unknown / not yet numbered" placeholder) shows as "?".
+ * (a negative "not yet numbered" placeholder) shows the "#" cue prompting a
+ * number. (The dashed "unknown jersey" quick-log button renders its own "?".)
  */
 export function jersey(num: number | null | undefined): string {
-  return num == null || num < 0 ? "?" : String(num);
+  return num == null || num < 0 ? "#" : String(num);
 }
 
 /** "#22 D. Whitfield" for a jersey number, searching both rosters. */
