@@ -23,7 +23,6 @@ import { PlayerCardOverlay } from "@/components/overlays/PlayerCardOverlay";
 import { PlayerEditOverlay } from "@/components/overlays/PlayerEditOverlay";
 import { AddPlayerOverlay } from "@/components/overlays/AddPlayerOverlay";
 import { FeedbackOverlay } from "@/components/overlays/FeedbackOverlay";
-import { flushFeedbackQueue } from "@/lib/sync/feedback";
 import { TryConversionOverlay } from "@/components/overlays/TryConversionOverlay";
 import { QbPickerOverlay } from "@/components/overlays/QbPickerOverlay";
 import { TimeoutOverlay } from "@/components/overlays/TimeoutOverlay";
@@ -48,7 +47,6 @@ export default function Page() {
   useEffect(() => {
     if (watchId === undefined || watchId) return; // don't hydrate in watch mode
     hydrate();
-    flushFeedbackQueue().catch(() => undefined); // retry any feedback saved offline
   }, [hydrate, watchId]);
 
   // Single game-clock interval; the store decides whether it advances.

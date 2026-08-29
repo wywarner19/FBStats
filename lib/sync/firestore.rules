@@ -19,16 +19,5 @@ service cloud.firestore {
       allow update, delete: if request.auth != null
                             && request.auth.uid == resource.data.ownerId;
     }
-
-    // In-app feedback. Any signed-in user (incl. anonymous) may submit; a
-    // submitter may read back only their own. The project owner reads all in
-    // the Firebase console. Feedback is never updated or deleted from the app.
-    match /feedback/{docId} {
-      allow create: if request.auth != null
-                    && request.resource.data.uid == request.auth.uid;
-      allow read: if request.auth != null
-                  && request.auth.uid == resource.data.uid;
-      allow update, delete: if false;
-    }
   }
 }

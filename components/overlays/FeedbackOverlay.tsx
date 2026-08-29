@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useGameStore, type Screen } from "@/store/useGameStore";
 import { playText } from "@/lib/format";
-import { sendFeedback, type FeedbackContext } from "@/lib/sync/feedback";
 import { OverlayShell } from "./OverlayShell";
 import { cx } from "@/components/ui";
+
+const REPO = "wywarner19/FBStats";
 
 const SCREEN_LABEL: Record<Screen, string> = {
   games: "Games list",
@@ -39,7 +40,6 @@ export function FeedbackOverlay() {
 
   const [kind, setKind] = useState<"bug" | "idea" | "other">("idea");
   const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
 
   const plays = game.plays.filter((p) => p.kind !== "Control");
   const lastPlay = plays.length ? playText(game.setup, plays[plays.length - 1]) : undefined;
@@ -50,24 +50,38 @@ export function FeedbackOverlay() {
     ? `Q${sit.qtr} · ${sit.down} & ${sit.dist} · ${game.setup.home.abbr} ${sit.scoreH}–${sit.scoreA} ${game.setup.away.abbr}`
     : undefined;
 
-  const context: FeedbackContext = {
-    screen: SCREEN_LABEL[screen],
-    step: lastStep,
-    matchup,
-    situation,
-    lastPlay,
-    model: inGame ? model : undefined,
-    path: typeof window !== "undefined" ? window.location.pathname : undefined,
-    ua: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+  /** Build the prefilled GitHub new-issue URL (title + body + labels). */
+  const issueUrl = () => {
+    const firstLine = text.trim().split("\n")[0].slice(0, 60);
+    const title = `Feedback: ${firstLine}`;
+    // Only the context lines are conditionally dropped; the blank spacer lines
+    // stay so the "---" reads as a rule (not a Markdown heading under the text).
+    const ctxLines = [
+      `- Screen: ${SCREEN_LABEL[screen]}`,
+      lastStep ? `- Just did: ${lastStep}` : null,
+      matchup ? `- Game: ${matchup}` : null,
+      situation ? `- Situation: ${situation}` : null,
+      lastPlay ? `- Last play: ${lastPlay}` : null,
+      inGame ? `- Entry model: ${model}` : null,
+    ].filter(Boolean) as string[];
+    const body = [
+      text.trim(),
+      "",
+      "---",
+      "**Context** (auto-captured)",
+      ...ctxLines,
+      "",
+      "— sent from FBStats Live",
+    ].join("\n");
+    const labels = encodeURIComponent(`feedback,${kind}`);
+    return `https://github.com/${REPO}/issues/new?labels=${labels}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   };
 
-  const send = async () => {
-    if (!text.trim() || sending) return;
-    setSending(true);
-    const ok = await sendFeedback({ text: text.trim(), kind, context });
-    setSending(false);
+  const send = () => {
+    if (!text.trim()) return;
+    window.open(issueUrl(), "_blank", "noopener");
     setOverlay(null);
-    flash(ok ? "Thanks — feedback sent ✓" : "Saved — will send when you're back online", true);
+    flash("Opening GitHub — tap “Submit new issue” to post it", true);
   };
 
   const chip =
@@ -113,11 +127,11 @@ export function FeedbackOverlay() {
       {/* Auto-captured context so you don't have to describe where you were. */}
       <div className="bg-panel-3 border border-edge rounded-[10px] p-3.5 mb-4">
         <div className="font-semi font-semibold text-[10px] leading-none tracking-[.16em] text-dim mb-2.5">
-          INCLUDED AUTOMATICALLY
+          ADDED TO THE ISSUE AUTOMATICALLY
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <span className={chip}>Screen: {context.screen}</span>
-          {context.step && <span className={chip}>Just did: {context.step}</span>}
+          <span className={chip}>Screen: {SCREEN_LABEL[screen]}</span>
+          {lastStep && <span className={chip}>Just did: {lastStep}</span>}
           {matchup && <span className={chip}>{matchup}</span>}
           {situation && <span className={chip}>{situation}</span>}
           {lastPlay && <span className={chip}>Last play: {lastPlay}</span>}
@@ -126,14 +140,17 @@ export function FeedbackOverlay() {
 
       <button
         onClick={send}
-        disabled={!text.trim() || sending}
+        disabled={!text.trim()}
         className={cx(
           "w-full min-h-[52px] rounded-[10px] border-0 font-cond font-bold text-[16px] leading-none tracking-[.06em]",
-          text.trim() && !sending ? "bg-turf text-onaccent cursor-pointer" : "bg-panel-4 text-dim-2 cursor-not-allowed",
+          text.trim() ? "bg-turf text-onaccent cursor-pointer" : "bg-panel-4 text-dim-2 cursor-not-allowed",
         )}
       >
-        {sending ? "Sending…" : "Send feedback"}
+        Post to GitHub
       </button>
+      <p className="m-0 mt-2.5 text-center text-[12px] leading-snug text-dim-2">
+        Opens a prefilled GitHub issue — just tap “Submit new issue” to send it.
+      </p>
     </OverlayShell>
   );
 }
