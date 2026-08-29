@@ -36,6 +36,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Apply the saved theme before first paint to avoid a flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('fb-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}",
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

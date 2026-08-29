@@ -1,12 +1,7 @@
 "use client";
 
+import { useGameStore } from "@/store/useGameStore";
 import { CARD, LABEL } from "@/components/ui";
-
-const FEEDBACK_URL =
-  "https://github.com/wywarner19/FBStats/issues/new?labels=feedback&title=" +
-  encodeURIComponent("Feedback: ") +
-  "&body=" +
-  encodeURIComponent("What happened / what you'd like:\n\n\n\n— sent from FBStats Live");
 
 const MODELS: { key: string; name: string; desc: string; taps: string }[] = [
   { key: "A", name: "Field-first, everything visible", desc: "Tap where the play ended, then carrier and result from an always-on grid. Best once you know the roster cold.", taps: "3" },
@@ -23,6 +18,7 @@ const TIPS: [string, string][] = [
 ];
 
 export function HelpScreen() {
+  const openFeedback = useGameStore((s) => s.openFeedback);
   return (
     <div className="flex-1 overflow-auto px-10 pt-8 pb-16">
       <div className="max-w-[1000px] flex flex-col gap-[26px]">
@@ -36,14 +32,12 @@ export function HelpScreen() {
             field-first entry metaphor, sized for a single statistician on an iPad who cannot look
             down for long. Offline-first — it works with no signal and autosaves as you go.
           </p>
-          <a
-            href={FEEDBACK_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 mt-4 min-h-[44px] px-4 bg-panel-4 border border-turf rounded-[10px] text-turf font-semibold text-[14px] no-underline cursor-pointer"
+          <button
+            onClick={openFeedback}
+            className="inline-flex items-center gap-2 mt-4 min-h-[44px] px-4 bg-panel-4 border border-turf rounded-[10px] text-turf font-semibold text-[14px] cursor-pointer"
           >
             💬 Send feedback / report a bug
-          </a>
+          </button>
         </div>
 
         <div>

@@ -96,7 +96,7 @@ export function TryConversionOverlay() {
               onClick={() => finishKick(true)}
               className={cx(
                 "flex-1 min-h-[58px] rounded-[11px] font-cond font-bold text-[18px] leading-none tracking-[.1em] cursor-pointer border-0",
-                kicker == null ? "bg-panel-3 text-dim-2 cursor-not-allowed" : "bg-turf text-ink",
+                kicker == null ? "bg-panel-3 text-dim-2 cursor-not-allowed" : "bg-turf text-onaccent",
               )}
             >
               PAT GOOD (+1)
@@ -140,7 +140,7 @@ export function TryConversionOverlay() {
           <div className="flex gap-2.5 mt-3">
             <button
               onClick={() => finishTwo(true)}
-              className="flex-1 min-h-[58px] bg-turf border-0 rounded-[11px] text-ink font-cond font-bold text-[18px] leading-none tracking-[.1em] cursor-pointer"
+              className="flex-1 min-h-[58px] bg-turf border-0 rounded-[11px] text-onaccent font-cond font-bold text-[18px] leading-none tracking-[.1em] cursor-pointer"
             >
               2-PT GOOD (+2)
             </button>

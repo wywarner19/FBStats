@@ -21,17 +21,14 @@ const GAME_NAV: [Screen, string][] = [
   ["setup", "Setup"],
 ];
 
-const FEEDBACK_URL =
-  "https://github.com/wywarner19/FBStats/issues/new?labels=feedback&title=" +
-  encodeURIComponent("Feedback: ") +
-  "&body=" +
-  encodeURIComponent("What happened / what you'd like:\n\n\n\n— sent from FBStats Live");
-
 export function AppHeader() {
   const screen = useGameStore((s) => s.screen);
   const inGame = useGameStore((s) => s.inGame);
   const setScreen = useGameStore((s) => s.setScreen);
   const setBroadcast = useGameStore((s) => s.setBroadcast);
+  const theme = useGameStore((s) => s.theme);
+  const toggleTheme = useGameStore((s) => s.toggleTheme);
+  const openFeedback = useGameStore((s) => s.openFeedback);
   const home = useGameStore((s) => s.game.setup.home.abbr);
   const away = useGameStore((s) => s.game.setup.away.abbr);
   const reviewCount = useGameStore(
@@ -105,15 +102,21 @@ export function AppHeader() {
           ⚑ {reviewCount}
         </button>
       )}
-      <a
-        href={FEEDBACK_URL}
-        target="_blank"
-        rel="noreferrer"
-        className="hidden sm:flex items-center gap-1.5 min-h-[34px] px-3 bg-panel-4 border border-edge-2 rounded-[8px] text-dim font-semibold text-[12px] leading-none cursor-pointer hover:text-cloud no-underline"
-        title="Send feedback (opens a GitHub issue)"
+      <button
+        onClick={toggleTheme}
+        className="flex items-center justify-center min-h-[34px] w-9 bg-panel-4 border border-edge-2 rounded-[8px] text-dim text-[14px] leading-none cursor-pointer hover:text-cloud"
+        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        aria-label="Toggle light and dark mode"
+      >
+        {theme === "dark" ? "☀️" : "🌙"}
+      </button>
+      <button
+        onClick={openFeedback}
+        className="flex items-center gap-1.5 min-h-[34px] px-3 bg-panel-4 border border-edge-2 rounded-[8px] text-dim font-semibold text-[12px] leading-none cursor-pointer hover:text-cloud whitespace-nowrap"
+        title="Send feedback"
       >
         Feedback
-      </a>
+      </button>
     </header>
   );
 }

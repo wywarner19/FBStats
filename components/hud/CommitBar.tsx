@@ -33,7 +33,7 @@ export function CommitBar() {
       </div>
       <button
         onClick={commit}
-        className="flex-1 min-h-[66px] bg-turf border-0 rounded-xl text-ink font-cond font-bold text-[24px] leading-none tracking-[.1em] cursor-pointer transition-transform active:scale-[.99] hover:brightness-105"
+        className="flex-1 min-h-[66px] bg-turf border-0 rounded-xl text-onaccent font-cond font-bold text-[24px] leading-none tracking-[.1em] cursor-pointer transition-transform active:scale-[.99] hover:brightness-105"
       >
         COMMIT PLAY
       </button>

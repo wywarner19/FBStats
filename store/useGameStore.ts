@@ -58,6 +58,8 @@ export type Screen =
   | "report"
   | "help";
 
+export type Theme = "dark" | "light";
+
 export type Overlay =
   | "pen"
   | "half"
@@ -65,6 +67,7 @@ export type Overlay =
   | "card"
   | "edit"
   | "addPlayer"
+  | "feedback"
   | "qb"
   | "timeout"
   | "kickoff"
@@ -79,6 +82,7 @@ export interface KickoffCtx {
 
 interface UIState {
   hydrated: boolean;
+  theme: Theme;
   screen: Screen;
   model: EntryModel;
   padMode: "off" | "def";
@@ -95,6 +99,8 @@ interface UIState {
   editingTime: boolean;
   timeInput: string;
   toast: string | null;
+  /** Last narrated action (the most recent flash), captured for feedback context. */
+  lastStep: string | null;
   setupStep: number;
   scanned: boolean;
   broadcast: boolean;
@@ -122,6 +128,9 @@ interface StoreState extends UIState {
   dispatch: (action: GameAction) => void;
 
   // UI setters
+  setTheme: (t: Theme) => void;
+  toggleTheme: () => void;
+  openFeedback: () => void;
   setScreen: (s: Screen) => void;
   setModel: (m: EntryModel) => void;
   setOverlay: (o: Overlay) => void;
@@ -130,7 +139,9 @@ interface StoreState extends UIState {
   togglePad: () => void;
   setBroadcast: (b: boolean) => void;
   shareCurrentGame: () => Promise<string | null>;
-  flash: (msg: string) => void;
+  /** Show a toast. `ephemeral` toasts (e.g. the feedback confirmation itself)
+   *  don't overwrite `lastStep`, which should track real game actions. */
+  flash: (msg: string, ephemeral?: boolean) => void;
 
   // draft editing
   patchDraft: (patch: Partial<PlayDraft>, advance?: boolean) => void;
@@ -235,6 +246,29 @@ function scheduleSave(game: GameState) {
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
+const THEME_KEY = "fb-theme";
+
+/** Read the persisted theme (client only); default dark. */
+function readInitialTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
+  try {
+    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+/** Persist the theme and flip the document attribute the CSS variables key off. */
+function applyTheme(theme: Theme) {
+  if (typeof document === "undefined") return;
+  document.documentElement.setAttribute("data-theme", theme);
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    /* private mode — the in-memory theme still works for this session */
+  }
+}
+
 // Debounced mirror to Firestore — only games that have been shared (have a
 // cloudId) are pushed, and only from the device doing the scoring.
 let cloudTimer: ReturnType<typeof setTimeout> | null = null;
@@ -259,6 +293,7 @@ export const useGameStore = create<StoreState>((set, get) => {
   return {
     ...({
       hydrated: false,
+      theme: readInitialTheme(),
       screen: "games",
       model: "A",
       padMode: "off",
@@ -275,6 +310,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       editingTime: false,
       timeInput: "",
       toast: null,
+      lastStep: null,
       setupStep: 1,
       scanned: false,
       broadcast: false,
@@ -291,6 +327,7 @@ export const useGameStore = create<StoreState>((set, get) => {
 
     hydrate: async () => {
       if (get().hydrated) return;
+      applyTheme(get().theme); // sync the document attribute with the stored theme
       try {
         // First run: seed the example game + a starter team profile.
         const seeded = await getMeta<boolean>("seeded");
@@ -347,6 +384,16 @@ export const useGameStore = create<StoreState>((set, get) => {
       applyGame(next);
     },
 
+    setTheme: (theme) => {
+      applyTheme(theme);
+      set({ theme });
+    },
+    toggleTheme: () => {
+      const theme: Theme = get().theme === "dark" ? "light" : "dark";
+      applyTheme(theme);
+      set({ theme });
+    },
+    openFeedback: () => set({ overlay: "feedback" }),
     setScreen: (screen) => set({ screen, overlay: null, inGame: GAME_SCREENS.includes(screen) }),
     setModel: (model) => set({ model }),
     setOverlay: (overlay) => set({ overlay, pen: overlay === "pen" ? null : get().pen }),
@@ -384,8 +431,10 @@ export const useGameStore = create<StoreState>((set, get) => {
       }
     },
 
-    flash: (msg) => {
-      set({ toast: msg });
+    flash: (msg, ephemeral) => {
+      // The flash text narrates the step just completed — keep the latest as a
+      // durable breadcrumb (toast clears after a few seconds; lastStep persists).
+      set(ephemeral ? { toast: msg } : { toast: msg, lastStep: msg });
       if (toastTimer) clearTimeout(toastTimer);
       toastTimer = setTimeout(() => set({ toast: null }), 3200);
     },

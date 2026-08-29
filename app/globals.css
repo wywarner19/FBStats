@@ -2,11 +2,95 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme palettes. Values are space-separated RGB channels so Tailwind can apply
+ * opacity modifiers (rgb(var(--c-x) / <alpha>)). Dark is the default (:root);
+ * [data-theme="light"] overrides it. The data-theme attribute is set pre-paint
+ * by an inline script in layout.tsx from localStorage.
+ */
+:root {
+  /* surfaces */
+  --c-ink: 15 18 22;
+  --c-panel: 23 27 33;
+  --c-panel-2: 19 23 32;
+  --c-panel-3: 30 36 44;
+  --c-panel-4: 35 41 50;
+  --c-panel-5: 26 30 37;
+  --c-edge: 44 51 61;
+  --c-edge-2: 58 69 82;
+  --c-edge-3: 51 60 72;
+  /* text */
+  --c-cloud: 233 236 239;
+  --c-mist: 201 209 218;
+  --c-slate: 185 194 204;
+  --c-slate-2: 152 161 174;
+  --c-dim: 143 153 166;
+  --c-dim-2: 111 120 131;
+  /* text on a saturated accent fill (dark ink text on the light-green button) */
+  --c-onaccent: 15 18 22;
+  /* accent — turf green */
+  --c-turf: 85 201 138;
+  --c-turf-hi: 125 219 167;
+  --c-turf-ink: 26 42 31;
+  --c-turf-edge: 59 92 71;
+  --c-turf-wash: 26 30 23;
+  --c-turf-wash-edge: 59 70 48;
+  /* warn — flag gold */
+  --c-flag: 216 162 74;
+  --c-flag-ink: 36 31 20;
+  --c-flag-edge: 92 74 36;
+  /* danger */
+  --c-danger: 224 138 138;
+  --c-danger-ink: 42 28 28;
+  --c-danger-edge: 92 48 48;
+
+  --scrollbar-thumb: 44 51 61;
+}
+
+:root[data-theme="light"] {
+  /* surfaces — off-white page, white cards */
+  --c-ink: 240 242 245;
+  --c-panel: 255 255 255;
+  --c-panel-2: 234 238 242;
+  --c-panel-3: 239 242 246;
+  --c-panel-4: 228 233 238;
+  --c-panel-5: 236 240 244;
+  --c-edge: 216 222 229;
+  --c-edge-2: 190 199 209;
+  --c-edge-3: 205 213 222;
+  /* text — near-black down to muted slate */
+  --c-cloud: 24 29 36;
+  --c-mist: 42 49 57;
+  --c-slate: 58 67 77;
+  --c-slate-2: 84 95 106;
+  --c-dim: 100 110 120;
+  --c-dim-2: 132 142 152;
+  /* on a saturated accent fill the text goes white in light mode */
+  --c-onaccent: 255 255 255;
+  /* accent — deeper green so it reads on white as both fill and text */
+  --c-turf: 22 138 79;
+  --c-turf-hi: 15 116 65;
+  --c-turf-ink: 223 245 233;
+  --c-turf-edge: 150 214 180;
+  --c-turf-wash: 236 248 241;
+  --c-turf-wash-edge: 199 231 213;
+  /* warn — deeper gold */
+  --c-flag: 168 111 20;
+  --c-flag-ink: 251 242 224;
+  --c-flag-edge: 226 202 150;
+  /* danger — deeper red */
+  --c-danger: 187 45 42;
+  --c-danger-ink: 251 233 231;
+  --c-danger-edge: 230 179 173;
+
+  --scrollbar-thumb: 190 199 209;
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
-  background: #0f1216;
+  background: rgb(var(--c-ink));
   -webkit-font-smoothing: antialiased;
 }
 
@@ -20,10 +104,10 @@ button {
 }
 
 a {
-  color: #55c98a;
+  color: rgb(var(--c-turf));
 }
 a:hover {
-  color: #7ddba7;
+  color: rgb(var(--c-turf-hi));
 }
 
 ::-webkit-scrollbar {
@@ -31,7 +115,7 @@ a:hover {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2c333d;
+  background: rgb(var(--scrollbar-thumb));
   border-radius: 6px;
 }
 ::-webkit-scrollbar-track {

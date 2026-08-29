@@ -146,7 +146,7 @@ export function AddPlayerOverlay() {
         </button>
         <button
           onClick={saveAndClose}
-          className="flex-1 min-h-[52px] bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[15px] leading-none tracking-[.06em] cursor-pointer"
+          className="flex-1 min-h-[52px] bg-turf border-0 rounded-[10px] text-onaccent font-cond font-bold text-[15px] leading-none tracking-[.06em] cursor-pointer"
         >
           Save &amp; close
         </button>

@@ -50,7 +50,7 @@ export function GamesScreen() {
           <div className="flex-1" />
           <button
             onClick={() => setAdding((v) => !v)}
-            className="min-h-[44px] px-4 bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[14px] tracking-[.06em] cursor-pointer"
+            className="min-h-[44px] px-4 bg-turf border-0 rounded-[10px] text-onaccent font-cond font-bold text-[14px] tracking-[.06em] cursor-pointer"
           >
             {adding ? "Close" : "+ Add game"}
           </button>
@@ -236,7 +236,7 @@ function AddGameForm({
           </button>
         ))}
       </div>
-      <button onClick={submit} className="min-h-[48px] px-5 bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[15px] tracking-[.06em] cursor-pointer">
+      <button onClick={submit} className="min-h-[48px] px-5 bg-turf border-0 rounded-[10px] text-onaccent font-cond font-bold text-[15px] tracking-[.06em] cursor-pointer">
         Add to schedule
       </button>
     </div>

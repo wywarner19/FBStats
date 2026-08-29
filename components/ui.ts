@@ -20,7 +20,7 @@ export const RING_FLAG =
   "pointer-events-none absolute -inset-0.5 border-2 border-flag rounded-xl";
 
 export const PRIMARY =
-  "min-h-[48px] bg-turf border-0 rounded-[11px] text-ink font-cond font-bold tracking-[.1em] cursor-pointer transition-transform active:scale-[.98] hover:brightness-105";
+  "min-h-[48px] bg-turf border-0 rounded-[11px] text-onaccent font-cond font-bold tracking-[.1em] cursor-pointer transition-transform active:scale-[.98] hover:brightness-105";
 
 export const GHOST =
   "min-h-[48px] bg-panel-4 border border-edge-2 rounded-[10px] text-cloud font-cond font-bold tracking-[.08em] cursor-pointer hover:border-dim";

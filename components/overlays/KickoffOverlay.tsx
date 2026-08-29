@@ -136,7 +136,7 @@ export function KickoffOverlay() {
             onClick={confirm}
             className={cx(
               "w-full min-h-[58px] rounded-[11px] font-cond font-bold text-[18px] leading-none tracking-[.1em] cursor-pointer border-0 mt-1",
-              kicker == null ? "bg-panel-3 text-dim-2 cursor-not-allowed" : "bg-turf text-ink",
+              kicker == null ? "bg-panel-3 text-dim-2 cursor-not-allowed" : "bg-turf text-onaccent",
             )}
           >
             {halfStart ? "START THE HALF" : "LOG KICKOFF"}

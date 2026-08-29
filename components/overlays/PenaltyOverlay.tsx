@@ -180,7 +180,7 @@ export function PenaltyOverlay() {
           <div className="flex gap-2.5">
             <button
               onClick={() => applyPenalty(true, duringTry ? onKickoff : undefined, effFoulSpot)}
-              className="flex-1 min-h-[60px] bg-turf border-0 rounded-[11px] text-ink font-cond font-bold text-[18px] leading-none tracking-[.1em] cursor-pointer"
+              className="flex-1 min-h-[60px] bg-turf border-0 rounded-[11px] text-onaccent font-cond font-bold text-[18px] leading-none tracking-[.1em] cursor-pointer"
             >
               ACCEPT PENALTY
             </button>

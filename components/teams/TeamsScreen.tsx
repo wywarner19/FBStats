@@ -41,7 +41,7 @@ export function TeamsScreen() {
           <h2 className="m-0 font-cond font-bold text-[32px] leading-none">Your teams</h2>
           <span className="font-medium text-[14px] leading-none text-dim">saved to this device</span>
           <div className="flex-1" />
-          <button onClick={() => addTeam(true)} className="min-h-[44px] px-4 bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[14px] tracking-[.06em] cursor-pointer">
+          <button onClick={() => addTeam(true)} className="min-h-[44px] px-4 bg-turf border-0 rounded-[10px] text-onaccent font-cond font-bold text-[14px] tracking-[.06em] cursor-pointer">
             + Add team
           </button>
         </div>

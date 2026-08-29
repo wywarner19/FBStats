@@ -75,10 +75,10 @@ export function FieldStrip() {
         <div className="absolute top-1.5 bottom-[26px] w-[3px] bg-turf" style={{ left: pct(sit.spot) }} />
         {/* First-down line */}
         <div className="absolute top-1.5 bottom-[26px] w-[2px] bg-flag" style={{ left: pct(ftd) }} />
-        <div className="absolute top-0.5 -translate-x-1/2 px-[7px] py-0.5 bg-turf rounded-[5px] font-bold text-[11px] leading-[1.4] text-ink whitespace-nowrap" style={{ left: pct(sit.spot) }}>
+        <div className="absolute top-0.5 -translate-x-1/2 px-[7px] py-0.5 bg-turf rounded-[5px] font-bold text-[11px] leading-[1.4] text-onaccent whitespace-nowrap" style={{ left: pct(sit.spot) }}>
           LOS
         </div>
-        <div className="absolute top-6 -translate-x-1/2 px-[7px] py-0.5 bg-flag rounded-[5px] font-bold text-[11px] leading-[1.4] text-ink whitespace-nowrap" style={{ left: pct(ftd) }}>
+        <div className="absolute top-6 -translate-x-1/2 px-[7px] py-0.5 bg-flag rounded-[5px] font-bold text-[11px] leading-[1.4] text-onaccent whitespace-nowrap" style={{ left: pct(ftd) }}>
           1ST
         </div>
         {/* Hash marks */}

@@ -115,7 +115,7 @@ export function RosterScreen() {
         </div>
         <button
           onClick={() => setScanned(true)}
-          className="w-full min-h-[52px] mt-3.5 bg-turf border-0 rounded-[10px] text-ink font-cond font-bold text-[15px] tracking-[.1em] cursor-pointer"
+          className="w-full min-h-[52px] mt-3.5 bg-turf border-0 rounded-[10px] text-onaccent font-cond font-bold text-[15px] tracking-[.1em] cursor-pointer"
         >
           {scanned ? "RE-SCAN PHOTO" : "SCAN PHOTO FOR NUMBERS"}
         </button>
