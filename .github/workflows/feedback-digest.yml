@@ -1,0 +1,61 @@
+name: Daily feedback digest
+
+# Runs on GitHub's own infrastructure, where issue access is built in — no
+# external app, token, or service needed. Reports open feedback issues (the
+# in-app Feedback button files them) into the Actions run summary once a day.
+on:
+  schedule:
+    - cron: "0 12 * * *" # 12:00 UTC = 8:00am America/Indianapolis (EDT)
+  workflow_dispatch: {} # allow a manual run from the Actions tab
+
+permissions:
+  issues: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize open feedback
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # All open issues (exclude pull requests), newest first.
+          all=$(gh issue list --repo "$REPO" --state open --limit 100 \
+            --json number,title,labels,author,createdAt,updatedAt)
+          # Feedback-labelled subset.
+          fb=$(echo "$all" | jq '[.[] | select(.labels | map(.name) | index("feedback"))]')
+
+          total=$(echo "$all" | jq 'length')
+          fbcount=$(echo "$fb" | jq 'length')
+
+          # "New" = created or updated within the last 25 hours.
+          cutoff=$(date -u -d '25 hours ago' +%s 2>/dev/null || date -u -v-25H +%s)
+          newcount=$(echo "$all" | jq --argjson c "$cutoff" \
+            '[.[] | select(((.updatedAt // .createdAt) | fromdateiso8601) > $c)] | length')
+
+          {
+            echo "## 📋 Feedback digest — $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo
+            echo "**$newcount new / $fbcount feedback / $total total open issue(s)** in \`$REPO\`"
+            echo
+            if [ "$total" -eq 0 ]; then
+              echo "_No open issues — all clear._"
+            else
+              echo "| # | Title | Labels | Opened by | Updated |"
+              echo "|---|-------|--------|-----------|---------|"
+              echo "$all" | jq -r --argjson c "$cutoff" '
+                sort_by(.updatedAt // .createdAt) | reverse | .[] |
+                ((if ((.updatedAt // .createdAt) | fromdateiso8601) > $c then "🆕 " else "" end)
+                  + "[#\(.number)](https://github.com/'"$REPO"'/issues/\(.number))")
+                + " | \(.title | gsub("\\|"; "\\\\|"))"
+                + " | \((.labels | map(.name) | join(", ")))"
+                + " | \(.author.login)"
+                + " | \((.updatedAt // .createdAt)[0:10]) |"' \
+                | sed 's/^/| /'
+            fi
+            echo
+            echo "_Tip: you're also emailed automatically the moment any feedback issue is filed (you own this repo)._"
+          } >> "$GITHUB_STEP_SUMMARY"
