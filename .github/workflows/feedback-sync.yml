@@ -1,0 +1,57 @@
+name: Publish feedback data
+
+# Materializes the current open feedback issues into a small JSON file on a
+# dedicated `feedback-data` branch. The Claude daily routine can't reach the
+# GitHub API from its sandbox, but it CAN anonymously clone a public branch —
+# so this is how it gets the data. Kept off `main` so it never triggers a
+# production deploy.
+on:
+  schedule:
+    - cron: "0 11 * * *" # 11:00 UTC, ~1h before the Claude routine reads it
+  workflow_dispatch: {}
+
+permissions:
+  issues: read
+  contents: write
+
+concurrency:
+  group: feedback-sync
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and push feedback/open.json to feedback-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          issues=$(gh issue list --repo "$REPO" --state open --limit 100 \
+            --json number,title,labels,author,createdAt,updatedAt,body \
+            | jq '[.[]
+                | {number, title,
+                   author: .author.login,
+                   labels: [.labels[].name],
+                   createdAt, updatedAt,
+                   body: ((.body // "") | .[0:600])}]')
+          gen=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          payload=$(jq -n --argjson issues "$issues" --arg gen "$gen" \
+            '{generatedAt: $gen, open: $issues}')
+
+          tmp=$(mktemp -d)
+          cd "$tmp"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          mkdir -p feedback
+          printf '%s\n' "$payload" > feedback/open.json
+          git add feedback/open.json
+          git commit -q -m "feedback data $gen"
+          git branch -M feedback-data
+          # Force-push a fresh single-commit branch (data snapshot, no history bloat)
+          git push -f origin feedback-data
+          echo "Published $(echo "$issues" | jq 'length') open issue(s) to feedback-data."
