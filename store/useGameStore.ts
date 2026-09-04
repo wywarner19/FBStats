@@ -85,6 +85,8 @@ export interface KickoffCtx {
 interface UIState {
   hydrated: boolean;
   theme: Theme;
+  /** Mirror the field display so its orientation matches the user's vantage. */
+  fieldFlipped: boolean;
   screen: Screen;
   model: EntryModel;
   padMode: "off" | "def";
@@ -131,6 +133,7 @@ interface StoreState extends UIState {
   // UI setters
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
+  toggleFieldFlip: () => void;
   openFeedback: () => void;
   setScreen: (s: Screen) => void;
   setModel: (m: EntryModel) => void;
@@ -251,6 +254,17 @@ function scheduleSave(game: GameState) {
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 const THEME_KEY = "fb-theme";
+const FIELD_FLIP_KEY = "fb-field-flip";
+
+/** Read the persisted field-flip preference (client only); default off. */
+function readFieldFlip(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(FIELD_FLIP_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** Read the persisted theme (client only); default dark. */
 function readInitialTheme(): Theme {
@@ -298,6 +312,7 @@ export const useGameStore = create<StoreState>((set, get) => {
     ...({
       hydrated: false,
       theme: readInitialTheme(),
+      fieldFlipped: readFieldFlip(),
       screen: "games",
       model: "A",
       padMode: "off",
@@ -433,6 +448,16 @@ export const useGameStore = create<StoreState>((set, get) => {
       const theme: Theme = get().theme === "dark" ? "light" : "dark";
       applyTheme(theme);
       set({ theme });
+    },
+    toggleFieldFlip: () => {
+      const fieldFlipped = !get().fieldFlipped;
+      try {
+        localStorage.setItem(FIELD_FLIP_KEY, fieldFlipped ? "1" : "0");
+      } catch {
+        /* private mode — still flips for this session */
+      }
+      set({ fieldFlipped });
+      get().flash(fieldFlipped ? "Field flipped" : "Field back to default", true);
     },
     openFeedback: () => set({ overlay: "feedback" }),
     setScreen: (screen) => set({ screen, overlay: null, inGame: GAME_SCREENS.includes(screen) }),
