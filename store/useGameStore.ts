@@ -22,7 +22,9 @@ import {
 } from "@/lib/engine/reducer";
 import type { GameInfo, TeamProfile } from "@/lib/types";
 import {
+  bellmontProfile,
   blankTeamProfile,
+  columbiaCityProfile,
   defaultTeamProfile,
   demoGame,
   exampleGame,
@@ -198,6 +200,8 @@ interface StoreState extends UIState {
   openCard: (num: number) => void;
   openEdit: (team: TeamId, id: string) => void;
   openAddPlayer: (team: TeamId) => void;
+  /** Bulk-add a built-in roster into a team of the CURRENT game (skips numbers already present). */
+  importRoster: (team: TeamId, roster: { n: number; name: string; pos: string }[]) => void;
   openQbPicker: () => void;
 
   // game info / season
@@ -361,6 +365,44 @@ export const useGameStore = create<StoreState>((set, get) => {
           const oppId = await upsert(opponent.name, opponent);
           await saveGame({ ...game, teamProfileId: mineId, opponentProfileId: oppId });
           await setMeta("seed-ccnr-v2", true);
+        }
+        // Columbia City vs Bellmont — Fri Sep 4, CC hosts. Adds Bellmont as an
+        // opponent profile (roster rolls over on a rematch) and the game.
+        // Unlike the block above, this NEVER overwrites the Columbia City
+        // profile — it reuses whatever the user already has so their roster
+        // edits (numbers/names/added players) are preserved.
+        if (!(await getMeta<boolean>("seed-cc-bellmont-v1"))) {
+          const opp = bellmontProfile();
+          const existing = await loadTeamProfiles();
+          const mine =
+            existing.find((t) => t.name === "Columbia City Eagles" && t.mine !== false) ??
+            (await (async () => {
+              const cc = columbiaCityProfile();
+              await saveTeamProfile(cc);
+              return cc;
+            })());
+          const priorOpp = existing.find((t) => t.name === opp.name);
+          const oppId = priorOpp ? priorOpp.id : opp.id;
+          await saveTeamProfile(priorOpp ? { ...opp, id: oppId } : opp);
+
+          const allGames = await loadAllGames();
+          // Lenient match so we never duplicate a CC-vs-Bellmont game the user
+          // may have already created and named differently ("Bellmont", "BEL"…).
+          const isCcBell = (g: GameState) => {
+            const sides = [g.setup.home, g.setup.away];
+            const hasCC = sides.some((t) => t.name === mine.name || t.abbr.toUpperCase() === "CC");
+            const hasBell = sides.some((t) => /bellmont/i.test(t.name) || t.abbr.toUpperCase().startsWith("BEL"));
+            return hasCC && hasBell;
+          };
+          if (!allGames.some(isCcBell)) {
+            const g = gameFromProfile(
+              mine,
+              { name: opp.name, abbr: opp.abbr, roster: opp.roster, id: oppId },
+              { date: "Fri · Sep 4", venue: "home" },
+            );
+            await saveGame({ ...g, teamProfileId: mine.id, opponentProfileId: oppId });
+          }
+          await setMeta("seed-cc-bellmont-v1", true);
         }
         const teams = await loadTeamProfiles();
         const currentId = await getMeta<string>("currentGameId");
@@ -643,6 +685,19 @@ export const useGameStore = create<StoreState>((set, get) => {
     openCard: (num) => set({ overlay: "card", cardNum: num }),
     openEdit: (team, id) => set({ overlay: "edit", editTeam: team, editId: id }),
     openAddPlayer: (team) => set({ overlay: "addPlayer", addTeam: team }),
+    importRoster: (team, roster) => {
+      const s = get();
+      const key = team === "H" ? "home" : "away";
+      const existing = new Set(s.game.setup[key].roster.map((p) => p.num));
+      let added = 0;
+      for (const r of roster) {
+        if (existing.has(r.n)) continue;
+        s.dispatch({ type: "ADD_PLAYER", team, player: { num: r.n, name: r.name, pos: r.pos } });
+        existing.add(r.n);
+        added += 1;
+      }
+      s.flash(added ? `Imported ${added} player${added === 1 ? "" : "s"}` : "Those players are already on the roster");
+    },
     openQbPicker: () => set({ overlay: "qb" }),
 
     updateInfo: (patch) => get().dispatch({ type: "UPDATE_INFO", patch }),

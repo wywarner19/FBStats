@@ -3,6 +3,7 @@
 import { useGameStore } from "@/store/useGameStore";
 import type { Player, TeamId } from "@/lib/types";
 import { jersey } from "@/lib/format";
+import { BUILTIN_ROSTERS } from "@/lib/engine/gameSeeds";
 import { LABEL } from "@/components/ui";
 
 const SCAN_ROWS = [
@@ -19,6 +20,7 @@ function RosterColumn({ team }: { team: TeamId }) {
   const openCard = useGameStore((s) => s.openCard);
   const openEdit = useGameStore((s) => s.openEdit);
   const openAddPlayer = useGameStore((s) => s.openAddPlayer);
+  const importRoster = useGameStore((s) => s.importRoster);
   const t = team === "H" ? game.setup.home : game.setup.away;
   const numColor = team === "H" ? "text-turf" : "text-flag";
   const heading = team === "H" ? `${t.name} — HOME` : `${t.name} — OPPONENT`;
@@ -26,11 +28,28 @@ function RosterColumn({ team }: { team: TeamId }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2.5">
+      <div className="flex items-center gap-2 mb-2.5 flex-wrap">
         <div className={`font-semi font-semibold text-[11px] leading-none tracking-[.18em] uppercase ${headColor}`}>
           {heading}
         </div>
         <div className="flex-1" />
+        <select
+          value=""
+          onChange={(e) => {
+            const b = BUILTIN_ROSTERS.find((x) => x.key === e.target.value);
+            if (b) importRoster(team, b.roster);
+            e.target.value = "";
+          }}
+          title="Load a full team roster into this side"
+          className="min-h-[34px] px-2 bg-panel-4 border border-edge-2 rounded-[8px] text-cloud font-semibold text-[12px] cursor-pointer hover:border-turf outline-none"
+        >
+          <option value="">⤓ Import roster…</option>
+          {BUILTIN_ROSTERS.map((b) => (
+            <option key={b.key} value={b.key}>
+              {b.label} ({b.roster.length})
+            </option>
+          ))}
+        </select>
         <button
           onClick={() => openAddPlayer(team)}
           className="min-h-[34px] px-3 bg-panel-4 border border-edge-2 rounded-[8px] text-cloud font-semibold text-[12px] cursor-pointer hover:border-turf"

@@ -7,7 +7,7 @@ import type {
   TeamProfile,
 } from "@/lib/types";
 import { SEED_AWAY, SEED_HOME } from "./constants";
-import { COLUMBIA_CITY_ROSTER, NORTHRIDGE_ROSTER } from "./gameSeeds";
+import { BELLMONT_ROSTER, COLUMBIA_CITY_ROSTER, NORTHRIDGE_ROSTER } from "./gameSeeds";
 
 let counter = 0;
 function id(prefix: string): string {
@@ -213,6 +213,30 @@ export function tonightSeed(): { mine: TeamProfile; opponent: TeamProfile; game:
   };
   const game = gameFromProfile(mine, opponent, { date: "Tonight", venue: "away" });
   return { mine, opponent, game };
+}
+
+/** A fresh Columbia City (your team) profile from the seed roster. */
+export function columbiaCityProfile(): TeamProfile {
+  return {
+    id: id("team"),
+    name: "Columbia City Eagles",
+    abbr: "CC",
+    roster: toRoster(COLUMBIA_CITY_ROSTER),
+    updatedAt: Date.now(),
+    mine: true,
+  };
+}
+
+/** The Bellmont Braves as an opponent profile (roster rolls over on a rematch). */
+export function bellmontProfile(): TeamProfile {
+  return {
+    id: id("team"),
+    name: "Bellmont Braves",
+    abbr: "BELL",
+    roster: toRoster(BELLMONT_ROSTER),
+    updatedAt: Date.now(),
+    mine: false,
+  };
 }
 
 /**
