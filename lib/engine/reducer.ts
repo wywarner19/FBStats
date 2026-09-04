@@ -51,6 +51,7 @@ export type GameAction =
   | { type: "TOGGLE_FLAG"; id: string }
   | { type: "SET_QB"; team: TeamId; num: number }
   | { type: "SET_CLOUD_ID"; cloudId: string }
+  | { type: "SET_ROSTER_PHOTO"; photo: string | null }
   | { type: "UPDATE_INFO"; patch: Partial<import("@/lib/types").GameInfo> }
   | { type: "NUDGE_SPOT"; delta: number }
   | { type: "DELETE_PLAY"; id: string }
@@ -345,6 +346,9 @@ export function gameReducer(g: GameState, action: GameAction): GameState {
 
     case "SET_CLOUD_ID":
       return { ...g, cloudId: action.cloudId, updatedAt: Date.now() };
+
+    case "SET_ROSTER_PHOTO":
+      return { ...g, rosterPhoto: action.photo ?? undefined, updatedAt: Date.now() };
 
     case "UPDATE_INFO": {
       return {

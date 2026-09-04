@@ -104,7 +104,6 @@ interface UIState {
   /** Last narrated action (the most recent flash), captured for feedback context. */
   lastStep: string | null;
   setupStep: number;
-  scanned: boolean;
   broadcast: boolean;
   shareUrl: string | null;
   sharing: boolean;
@@ -137,7 +136,6 @@ interface StoreState extends UIState {
   setModel: (m: EntryModel) => void;
   setOverlay: (o: Overlay) => void;
   setSetupStep: (n: number) => void;
-  setScanned: (b: boolean) => void;
   togglePad: () => void;
   setBroadcast: (b: boolean) => void;
   shareCurrentGame: () => Promise<string | null>;
@@ -202,6 +200,8 @@ interface StoreState extends UIState {
   openAddPlayer: (team: TeamId) => void;
   /** Bulk-add a built-in roster into a team of the CURRENT game (skips numbers already present). */
   importRoster: (team: TeamId, roster: { n: number; name: string; pos: string }[]) => void;
+  /** Save (or clear) a downscaled roster-sheet photo on the current game. */
+  setRosterPhoto: (photo: string | null) => void;
   openQbPicker: () => void;
 
   // game info / season
@@ -316,7 +316,6 @@ export const useGameStore = create<StoreState>((set, get) => {
       toast: null,
       lastStep: null,
       setupStep: 1,
-      scanned: false,
       broadcast: false,
       shareUrl: null,
       sharing: false,
@@ -440,7 +439,6 @@ export const useGameStore = create<StoreState>((set, get) => {
     setModel: (model) => set({ model }),
     setOverlay: (overlay) => set({ overlay, pen: overlay === "pen" ? null : get().pen }),
     setSetupStep: (setupStep) => set({ setupStep }),
-    setScanned: (scanned) => set({ scanned }),
     togglePad: () => set((s) => ({ padMode: s.padMode === "off" ? "def" : "off" })),
     setBroadcast: (broadcast) => set({ broadcast }),
     shareCurrentGame: async () => {
@@ -698,6 +696,7 @@ export const useGameStore = create<StoreState>((set, get) => {
       }
       s.flash(added ? `Imported ${added} player${added === 1 ? "" : "s"}` : "Those players are already on the roster");
     },
+    setRosterPhoto: (photo) => get().dispatch({ type: "SET_ROSTER_PHOTO", photo }),
     openQbPicker: () => set({ overlay: "qb" }),
 
     updateInfo: (patch) => get().dispatch({ type: "UPDATE_INFO", patch }),

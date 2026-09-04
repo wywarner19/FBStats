@@ -48,7 +48,8 @@ export async function pushGame(game: GameState): Promise<void> {
   await setDoc(
     doc(fb.db, COLLECTION, game.cloudId),
     {
-      data: JSON.stringify(game),
+      // rosterPhoto is a local entry aid — never push it (keeps the doc small).
+      data: JSON.stringify({ ...game, rosterPhoto: undefined }),
       ownerId: uid,
       shared: true,
       title: `${game.setup.home.name} vs ${game.setup.away.name}`,

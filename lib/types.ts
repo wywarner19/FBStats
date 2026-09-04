@@ -301,6 +301,9 @@ export interface GameState {
   venue?: "home" | "away" | "neutral";
   /** A built-in example game shown in the schedule; not one of the user's. */
   example?: boolean;
+  /** A photo of the roster sheet (downscaled data URL), kept as an entry aid.
+   *  Local only — stripped before the game is pushed to the cloud/broadcast. */
+  rosterPhoto?: string;
   setup: GameSetup;
   /** The situation the fold starts from (state before the first play). */
   anchor: Situation;
