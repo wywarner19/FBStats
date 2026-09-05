@@ -96,22 +96,15 @@ export function PadA() {
         {results.map((r) => (
           <button
             key={r}
-            onClick={() => chooseResult(r)}
+            // "Sack" on a pass reclassifies to a sack play (correct stats: lost
+            // passing yards, no attempt), keeping the QB as the sacked player.
+            onClick={() => (r === "Sack" ? chooseType("Sack") : chooseResult(r))}
             className="relative min-h-[46px] px-[15px] bg-panel-3 border border-edge-3 rounded-[9px] text-slate font-semibold text-[14px] leading-none cursor-pointer"
           >
             {r}
             {draft.result === r && <span className="absolute -inset-0.5 border-2 border-flag rounded-[11px]" />}
           </button>
         ))}
-        {draft.type === "Pass" && (
-          <button
-            onClick={() => chooseType("Sack")}
-            className="min-h-[46px] px-[15px] bg-flag-ink border border-flag-edge rounded-[9px] text-flag font-semibold text-[14px] leading-none cursor-pointer"
-            title="QB dropped back and was sacked — record this as a sack"
-          >
-            → Sack
-          </button>
-        )}
       </div>
 
       {draft.type === "Pass" && (

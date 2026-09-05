@@ -63,6 +63,7 @@ export type PlayResult =
   | "Fumble lost"
   | "Complete"
   | "Incomplete"
+  | "Sack"
   | "Interception"
   | "Returned"
   | "Fair catch"
