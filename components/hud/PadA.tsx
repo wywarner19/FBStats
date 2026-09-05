@@ -30,7 +30,16 @@ export function PadA() {
   const off = offenseRoster(game.setup, sit.poss);
   const def = defenseRoster(game.setup, sit.poss);
   const results = RESULTS[draft.type ?? "Run"];
-  const ballLabel = draft.type === "Pass" ? (draft.playerId == null ? "PASSER" : "TARGET") : "BALL CARRIER";
+  const ballLabel =
+    draft.type === "Pass"
+      ? draft.playerId == null
+        ? "PASSER"
+        : "TARGET"
+      : draft.type === "Punt"
+        ? "PUNTER"
+        : draft.type === "FG"
+          ? "KICKER"
+          : "BALL CARRIER";
   const offLabel = `${sit.poss === "H" ? game.setup.home.abbr : game.setup.away.abbr} offense`;
 
   const unknownPlayer = () => {
