@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { clampSpot, direction } from "@/lib/engine/rules";
 import { spotLabel } from "@/lib/engine/rules";
@@ -18,9 +18,11 @@ export function FieldStrip() {
   const draft = useGameStore((s) => s.draft);
   const setEndFromField = useGameStore((s) => s.setEndFromField);
   const setYards = useGameStore((s) => s.setYards);
+  const chooseResult = useGameStore((s) => s.chooseResult);
   const flipped = useGameStore((s) => s.fieldFlipped);
   const toggleFieldFlip = useGameStore((s) => s.toggleFieldFlip);
   const [typed, setTyped] = useState("");
+  const dragging = useRef(false);
 
   const dir = direction(sit.poss);
   const ftd = clampSpot(sit.spot + dir * sit.dist);
@@ -31,12 +33,34 @@ export function FieldStrip() {
   // Flip mirrors the whole display: absolute yard y is drawn at (100 - y).
   const mx = (y: number) => pct(flipped ? 100 - clampSpot(y) : clampSpot(y));
 
-  const onTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const raw = ((e.clientX - r.left) / r.width * 100 - 11) / 0.78;
+  // Which visual side the offense's attacking end zone is on (for the TD zone).
+  const attackRight = (sit.poss === "H") !== flipped;
+  const attackGoal = sit.poss === "H" ? 100 : 0;
+
+  const spotFromX = (clientX: number, rect: DOMRect) => {
+    const raw = ((clientX - rect.left) / rect.width * 100 - 11) / 0.78;
     let y = clampSpot(Math.round(raw));
     if (flipped) y = clampSpot(100 - y);
-    setEndFromField(y);
+    return y;
+  };
+
+  // Drag (or tap) the ball along the field to set where the play ended.
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragging.current = true;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setEndFromField(spotFromX(e.clientX, e.currentTarget.getBoundingClientRect()));
+  };
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    setEndFromField(spotFromX(e.clientX, e.currentTarget.getBoundingClientRect()));
+  };
+  const onUp = () => {
+    dragging.current = false;
+  };
+
+  const scoreTd = () => {
+    setEndFromField(attackGoal);
+    chooseResult("Touchdown");
   };
 
   const delta =
@@ -47,7 +71,7 @@ export function FieldStrip() {
   return (
     <div className="px-[18px] pt-4 pb-3">
       <div className="flex items-baseline justify-between mb-2 gap-2">
-        <span className={`${LABEL} text-[10px]`}>TAP THE FIELD WHERE THE PLAY ENDED</span>
+        <span className={`${LABEL} text-[10px]`}>DRAG OR TAP WHERE THE PLAY ENDED</span>
         <button
           onClick={toggleFieldFlip}
           className="flex-none min-h-[26px] px-2 bg-panel-4 border border-edge-2 rounded-[6px] text-dim font-semibold text-[10px] leading-none tracking-[.06em] cursor-pointer hover:text-cloud hover:border-turf"
@@ -58,9 +82,12 @@ export function FieldStrip() {
         <span className="font-semibold text-[13px] leading-none text-turf ml-auto">{delta}</span>
       </div>
       <div
-        onClick={onTap}
-        className="relative h-[190px] rounded-xl overflow-hidden border border-[#2c3b31] cursor-crosshair"
-        style={{ background: "linear-gradient(180deg,#1b2a20,#16221a)", touchAction: "manipulation" }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        className="relative h-[190px] rounded-xl overflow-hidden border border-[#2c3b31] cursor-crosshair select-none"
+        style={{ background: "linear-gradient(180deg,#1b2a20,#16221a)", touchAction: "none" }}
       >
         {TICKS.map((y) => (
           <div key={`t${y}`} className="absolute top-0 bottom-0 w-px bg-white/10" style={{ left: mx(y) }} />
@@ -115,6 +142,30 @@ export function FieldStrip() {
         {/* Hash marks */}
         <div className="absolute left-[22px] right-[22px] h-px bg-white/10 top-[62px]" />
         <div className="absolute left-[22px] right-[22px] h-px bg-white/10 top-[118px]" />
+
+        {/* Draggable ball marker at the play's end spot */}
+        {draft.end != null && (
+          <div
+            className="absolute top-[86px] -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-turf border-2 border-onaccent shadow pointer-events-none"
+            style={{ left: mx(endY) }}
+          />
+        )}
+
+        {/* Touchdown zone — tap the attacking end zone to score */}
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={scoreTd}
+          className={cx(
+            "absolute top-0 bottom-0 w-[22px] grid place-items-center cursor-pointer",
+            attackRight ? "right-0" : "left-0",
+            draft.result === "Touchdown" ? "bg-turf/30" : "hover:bg-turf/15",
+          )}
+          title="Touchdown — offense reached the end zone"
+        >
+          <span className="font-cond font-bold text-[11px] leading-none tracking-[.08em] text-turf [writing-mode:vertical-rl] rotate-180">
+            TD
+          </span>
+        </button>
       </div>
 
       {/* Or set the gain/loss directly, without tapping the field. */}

@@ -80,8 +80,10 @@ export function applyPlay(sit: Situation, play: PlayEvent): Situation {
   const crossedOwnGoal = sit.poss === "H" ? rawEnd <= 0 : rawEnd >= 100;
   const crossedAttackGoal = sit.poss === "H" ? rawEnd >= 100 : rawEnd <= 0;
 
+  // Kick/punt return touchdowns are scored by the RECEIVING team, handled in
+  // the Punt block below — so kicks never take this offense-TD path.
   const isTouchdown =
-    play.result === "Touchdown" || (crossedAttackGoal && !KICK_TYPES.has(play.kind));
+    !KICK_TYPES.has(play.kind) && (play.result === "Touchdown" || crossedAttackGoal);
 
   // --- Scoring outcomes -------------------------------------------------
   if (isTouchdown) {
@@ -125,14 +127,31 @@ export function applyPlay(sit: Situation, play: PlayEvent): Situation {
 
   // --- Change of possession (no score) ---------------------------------
   if (play.kind === "Punt") {
-    if (play.result === "Touchback") {
-      poss = other(poss);
-      // Touchback to the receiving team's own 20.
-      const tb = poss === "H" ? 20 : 80;
-      return firstAndTen(sit.qtr, poss, tb, scoreH, scoreA);
+    const rec = other(poss);
+    if (play.result === "Touchdown") {
+      // Punt return touchdown — the RECEIVING team scores, PAT owed.
+      if (rec === "H") scoreH += 6;
+      else scoreA += 6;
+      return {
+        qtr: sit.qtr,
+        poss: rec,
+        down: 0,
+        dist: 0,
+        spot: rec === "H" ? 97 : 3,
+        scoreH,
+        scoreA,
+        goalToGo: false,
+        tryPending: rec,
+      };
     }
-    poss = other(poss);
-    return firstAndTen(sit.qtr, poss, clampSpot(spot), scoreH, scoreA);
+    if (play.result === "Touchback") {
+      // Touchback to the receiving team's own 20.
+      const tb = rec === "H" ? 20 : 80;
+      return firstAndTen(sit.qtr, rec, tb, scoreH, scoreA);
+    }
+    // Returned / Fair catch / Out of bounds / Downed — receiver takes over at
+    // the dead-ball spot (where the field tap / yards put the ball).
+    return firstAndTen(sit.qtr, rec, clampSpot(spot), scoreH, scoreA);
   }
 
   if (RESULT_TURNOVER.includes(play.result)) {
@@ -227,6 +246,21 @@ function applyControlEvent(sit: Situation, play: PlayEvent): Situation {
         down,
         dist,
         goalToGo: isGoalToGo(spot, poss, dist),
+      };
+    }
+    case "returnTd": {
+      // A kickoff return touchdown — the returning team scores (+6, PAT owed).
+      const team = c.team ?? sit.poss;
+      return {
+        ...sit,
+        poss: team,
+        down: 0,
+        dist: 0,
+        spot: team === "H" ? 97 : 3,
+        scoreH: sit.scoreH + (team === "H" ? 6 : 0),
+        scoreA: sit.scoreA + (team === "A" ? 6 : 0),
+        goalToGo: false,
+        tryPending: team,
       };
     }
     default:

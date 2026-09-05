@@ -24,6 +24,7 @@ export function PadA() {
   const setKicker = useGameStore((s) => s.setKicker);
   const setHolder = useGameStore((s) => s.setHolder);
   const setSnapper = useGameStore((s) => s.setSnapper);
+  const setReturner = useGameStore((s) => s.setReturner);
   const patchDraft = useGameStore((s) => s.patchDraft);
   const flash = useGameStore((s) => s.flash);
 
@@ -102,6 +103,15 @@ export function PadA() {
             {draft.result === r && <span className="absolute -inset-0.5 border-2 border-flag rounded-[11px]" />}
           </button>
         ))}
+        {draft.type === "Pass" && (
+          <button
+            onClick={() => chooseType("Sack")}
+            className="min-h-[46px] px-[15px] bg-flag-ink border border-flag-edge rounded-[9px] text-flag font-semibold text-[14px] leading-none cursor-pointer"
+            title="QB dropped back and was sacked — record this as a sack"
+          >
+            → Sack
+          </button>
+        )}
       </div>
 
       {draft.type === "Pass" && (
@@ -122,6 +132,19 @@ export function PadA() {
           <RolePicker label="SNAPPER — OPTIONAL" roster={off} selected={draft.snapper} onPick={setSnapper} accent="flag" />
         </div>
       )}
+
+      {draft.type === "Punt" &&
+        (draft.result === "Returned" || draft.result === "Out of bounds" || draft.result === "Touchdown") && (
+          <div className="mb-1">
+            <RolePicker
+              label={`RETURNER — OPTIONAL (${sit.poss === "H" ? game.setup.away.abbr : game.setup.home.abbr})`}
+              roster={def}
+              selected={draft.returner ?? null}
+              onPick={setReturner}
+              accent="flag"
+            />
+          </div>
+        )}
 
       <div className="flex items-center justify-between mb-2 gap-2">
         <span className={`${LABEL} text-[10px]`}>TACKLED BY — TAP TWO FOR AN ASSIST</span>

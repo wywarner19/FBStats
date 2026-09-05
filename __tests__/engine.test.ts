@@ -338,3 +338,43 @@ describe("labels", () => {
     expect(spotLabel(70, g.setup)).toBe("RVT 30");
   });
 });
+
+describe("return touchdowns and kick out-of-bounds", () => {
+  it("a punt return TD credits the receiving team with a PAT owed", () => {
+    const s = applyPlay(
+      sit({ poss: "H", spot: 45 }),
+      play({ kind: "Punt", poss: "H", result: "Touchdown", end: 100, yards: 55 }),
+    );
+    expect(s.scoreA).toBe(6);
+    expect(s.scoreH).toBe(0);
+    expect(s.poss).toBe("A");
+    expect(s.tryPending).toBe("A");
+  });
+
+  it("a normal punt just flips possession at the dead-ball spot", () => {
+    const s = applyPlay(
+      sit({ poss: "H", spot: 30 }),
+      play({ kind: "Punt", poss: "H", result: "Downed", end: 75, yards: 45 }),
+    );
+    expect(s.scoreA).toBe(0);
+    expect(s.poss).toBe("A");
+    expect(s.spot).toBe(75);
+  });
+
+  it("a kickoff return TD credits the receiving team", () => {
+    let g = newGame();
+    g = gameReducer(g, { type: "KICKOFF", receiving: "A", kicker: 5, result: "TD" });
+    const s = currentSituation(g);
+    expect(s.scoreA).toBe(6);
+    expect(s.poss).toBe("A");
+    expect(s.tryPending).toBe("A");
+  });
+
+  it("a kickoff out of bounds gives the receiver its own 40", () => {
+    let g = newGame();
+    g = gameReducer(g, { type: "KICKOFF", receiving: "A", kicker: 5, result: "Out of bounds" });
+    const s = currentSituation(g);
+    expect(s.poss).toBe("A");
+    expect(s.spot).toBe(60); // A's own 40 = absolute 60
+  });
+});

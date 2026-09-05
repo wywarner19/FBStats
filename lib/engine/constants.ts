@@ -20,7 +20,7 @@ export const RESULTS: Record<PlayType, PlayResult[]> = {
   Run: ["Tackle", "First down", "Out of bounds", "Touchdown", "Fumble lost"],
   Pass: ["Complete", "Incomplete", "Touchdown", "Interception", "Fumble lost"],
   Sack: ["Tackle", "Fumble lost"],
-  Punt: ["Returned", "Fair catch", "Touchback", "Downed"],
+  Punt: ["Returned", "Fair catch", "Out of bounds", "Touchback", "Downed", "Touchdown"],
   FG: ["Made", "Missed", "Blocked"],
   Kneel: ["Tackle"],
 };

@@ -66,7 +66,7 @@ export type GameAction =
       receiving: TeamId;
       kicker: number | null;
       returner?: number | null;
-      result: "Touchback" | "Returned" | "Onside";
+      result: "Touchback" | "Returned" | "Onside" | "Out of bounds" | "TD";
       toSpot?: number | null;
       qtr?: number;
       resetClock?: boolean;
@@ -149,9 +149,11 @@ export function draftToPlay(
     kicker: type === "FG" ? draft.kicker : null,
     holder: type === "FG" ? draft.holder : null,
     snapper: type === "FG" ? draft.snapper : null,
+    returner: type === "Punt" ? (draft.returner ?? null) : null,
     scoring:
       result === "Touchdown"
-        ? { team: sit.poss, kind: "TD", points: 6 }
+        ? // A punt return TD is scored by the receiving team, not the punter's.
+          { team: type === "Punt" ? (sit.poss === "H" ? "A" : "H") : sit.poss, kind: "TD", points: 6 }
         : null,
     review: draft.flag ? { flagged: true } : undefined,
   };
@@ -476,25 +478,38 @@ export function gameReducer(g: GameState, action: GameAction): GameState {
 
     case "KICKOFF": {
       const kicking = action.receiving === "H" ? "A" : "H";
-      // Onside recovery keeps the ball with the kicking team; otherwise the
-      // receiving team takes over.
-      const poss = action.result === "Onside" ? kicking : action.receiving;
-      const ownYard =
-        action.result === "Touchback"
-          ? 20 // NFHS kickoff touchback → receiving team's own 20
-          : action.result === "Onside"
-            ? 45 // kicking team recovers near its own 45
-            : (action.toSpot ?? 25); // return spot as own-yard, default 25
-      const spot = poss === "H" ? ownYard : 100 - ownYard;
       const kickerLbl = action.kicker != null ? `#${action.kicker}` : "";
-      const control: ControlOp = {
-        op: "setSituation",
-        team: poss,
-        spot,
-        down: 1,
-        dist: 10,
-        label: `Kickoff ${kickerLbl} · ${action.result}`.trim(),
-      };
+
+      // Return touchdown — the receiving team scores (handled by the fold).
+      let control: ControlOp;
+      if (action.result === "TD") {
+        control = {
+          op: "returnTd",
+          team: action.receiving,
+          label: `Kickoff ${kickerLbl} · returned for TD`.trim(),
+        };
+      } else {
+        // Onside recovery keeps the ball with the kicking team; otherwise the
+        // receiving team takes over.
+        const poss = action.result === "Onside" ? kicking : action.receiving;
+        const ownYard =
+          action.result === "Touchback"
+            ? 20 // NFHS kickoff touchback → receiving team's own 20
+            : action.result === "Onside"
+              ? 45 // kicking team recovers near its own 45
+              : action.result === "Out of bounds"
+                ? 40 // kickoff OOB → receiving team's own 40
+                : (action.toSpot ?? 25); // return spot as own-yard, default 25
+        const spot = poss === "H" ? ownYard : 100 - ownYard;
+        control = {
+          op: "setSituation",
+          team: poss,
+          spot,
+          down: 1,
+          dist: 10,
+          label: `Kickoff ${kickerLbl} · ${action.result}`.trim(),
+        };
+      }
       const play = controlPlay(g, control);
       play.kicker = action.kicker;
       play.returner = action.returner ?? null;
@@ -572,5 +587,6 @@ export function blankDraft(hash: Hash = "M"): PlayDraft {
     kicker: null,
     holder: null,
     snapper: null,
+    returner: null,
   };
 }

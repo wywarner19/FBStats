@@ -164,6 +164,7 @@ interface StoreState extends UIState {
   setHash: (h: Hash) => void;
   setPassDetail: (d: PassDetail) => void;
   setKicker: (num: number) => void;
+  setReturner: (num: number) => void;
   setHolder: (num: number) => void;
   setSnapper: (num: number) => void;
   setYards: (y: number) => void;
@@ -194,7 +195,7 @@ interface StoreState extends UIState {
   doKickoff: (opts: {
     kicker: number | null;
     returner?: number | null;
-    result: "Touchback" | "Returned" | "Onside";
+    result: "Touchback" | "Returned" | "Onside" | "Out of bounds" | "TD";
     toSpot?: number | null;
   }) => void;
   endQuarter: () => void;
@@ -574,6 +575,8 @@ export const useGameStore = create<StoreState>((set, get) => {
       get().patchDraft({ holder: get().draft.holder === num ? null : num }),
     setSnapper: (num) =>
       get().patchDraft({ snapper: get().draft.snapper === num ? null : num }),
+    setReturner: (num) =>
+      get().patchDraft({ returner: get().draft.returner === num ? null : num }),
     setYards: (y) => {
       // Set yards AND the derived end spot so the field/box stay consistent
       // whether yards came from a field tap or a direct entry.

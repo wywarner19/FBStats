@@ -43,7 +43,8 @@ export const PASS_DETAILS: PassDetail[] = [
 
 /** A non-play timeline entry: halftime resume, manual possession flip, etc. */
 export interface ControlOp {
-  op: "flip" | "resume" | "setSituation";
+  /** `returnTd` scores a kick/punt return touchdown for `team` (+6, PAT owed). */
+  op: "flip" | "resume" | "setSituation" | "returnTd";
   team?: TeamId;
   qtr?: number;
   spot?: number;
@@ -237,6 +238,8 @@ export interface PlayDraft {
   kicker: number | null;
   holder: number | null;
   snapper: number | null;
+  /** Kick/punt returner (on the receiving team). */
+  returner?: number | null;
   /** Flag the committed play for review (e.g. a placeholder player was created). */
   flag?: boolean;
 }

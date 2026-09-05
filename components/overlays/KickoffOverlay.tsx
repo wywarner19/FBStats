@@ -7,7 +7,7 @@ import { OverlayShell } from "./OverlayShell";
 import { RolePicker } from "@/components/hud/RolePicker";
 import { LABEL, cx } from "@/components/ui";
 
-type Result = "Touchback" | "Returned" | "Onside";
+type Result = "Touchback" | "Returned" | "Onside" | "Out of bounds" | "TD";
 
 /** Capture a kickoff — kicker (required), receiving team, and result. Used at
  * the start of each half and for the opening kickoff. */
@@ -87,17 +87,25 @@ export function KickoffOverlay() {
           />
 
           <div className={`${LABEL} text-[10px] mb-2 mt-1`}>RESULT</div>
-          <div className="flex gap-2 mb-3">
-            {(["Touchback", "Returned", "Onside"] as Result[]).map((r) => (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {(
+              [
+                ["Returned", "Returned"],
+                ["Out of bounds", "Out of bounds"],
+                ["TD", "Return TD 🏈"],
+                ["Touchback", "Touchback"],
+                ["Onside", "Onside"],
+              ] as [Result, string][]
+            ).map(([r, lbl]) => (
               <button
                 key={r}
                 onClick={() => setResult(r)}
                 className={cx(
-                  "flex-1 min-h-[44px] rounded-[9px] border font-semibold text-[14px] leading-none cursor-pointer",
+                  "min-h-[44px] px-3.5 rounded-[9px] border font-semibold text-[14px] leading-none cursor-pointer",
                   result === r ? "bg-panel-4 border-turf text-cloud" : "bg-panel-5 border-edge text-dim",
                 )}
               >
-                {r}
+                {lbl}
               </button>
             ))}
           </div>
@@ -105,10 +113,11 @@ export function KickoffOverlay() {
           {result === "Returned" && (
             <div className="mb-3">
               <div className={`${LABEL} text-[10px] mb-2`}>
-                RETURNED TO {receivingTeam?.abbr} YARD LINE
+                RETURNED TO {receivingTeam?.abbr} YARD LINE{" "}
+                <span className="text-dim-2 normal-case tracking-normal">(over 50 = crossed midfield)</span>
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-2.5">
-                {[15, 20, 25, 30, 35, 40].map((y) => (
+              <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                {[15, 20, 25, 30, 40, 50].map((y) => (
                   <button
                     key={y}
                     onClick={() => setToYard(y)}
@@ -120,7 +129,20 @@ export function KickoffOverlay() {
                     {y}
                   </button>
                 ))}
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={toYard}
+                  onChange={(e) => setToYard(Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 0)))}
+                  className="w-16 h-[42px] bg-panel-3 border border-edge-3 rounded-[8px] text-center font-cond font-bold text-[16px] text-cloud outline-none"
+                  title="Type any yard line"
+                />
               </div>
+            </div>
+          )}
+
+          {(result === "Returned" || result === "Out of bounds" || result === "TD") && (
+            <div className="mb-3">
               <RolePicker
                 label={`RETURNER — OPTIONAL (${receivingTeam?.abbr})`}
                 roster={receiving === "H" ? game.setup.home.roster : game.setup.away.roster}
