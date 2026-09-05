@@ -255,8 +255,8 @@ function mergeBox(into: BoxScore, from: BoxScore) {
     r.tgt += v.tgt; r.rec += v.rec; r.yds += v.yds; r.td += v.td;
   }
   for (const [k, v] of Object.entries(from.def)) {
-    const r = (into.def[+k] ??= { tk: 0, ast: 0 });
-    r.tk += v.tk; r.ast += v.ast;
+    const r = (into.def[+k] ??= { tk: 0, ast: 0, int: 0, fr: 0 });
+    r.tk += v.tk; r.ast += v.ast; r.int += v.int; r.fr += v.fr;
   }
   for (const [k, v] of Object.entries(from.kick)) {
     const r = (into.kick[+k] ??= { paMade: 0, paAtt: 0, fgMade: 0, fgAtt: 0 });

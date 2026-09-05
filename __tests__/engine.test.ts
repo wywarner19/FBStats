@@ -378,3 +378,29 @@ describe("return touchdowns and kick out-of-bounds", () => {
     expect(s.spot).toBe(60); // A's own 40 = absolute 60
   });
 });
+
+describe("defensive return touchdowns and turnover attribution", () => {
+  it("a pick-six scores the DEFENSE with a PAT owed", () => {
+    const s = applyPlay(sit({ poss: "H", spot: 40 }), play({ kind: "Pass", poss: "H", result: "Pick 6" }));
+    expect(s.scoreA).toBe(6);
+    expect(s.scoreH).toBe(0);
+    expect(s.poss).toBe("A");
+    expect(s.tryPending).toBe("A");
+  });
+
+  it("a scoop-and-score (Fumble TD) scores the DEFENSE", () => {
+    const s = applyPlay(sit({ poss: "A", spot: 60 }), play({ kind: "Run", poss: "A", result: "Fumble TD" }));
+    expect(s.scoreH).toBe(6);
+    expect(s.poss).toBe("H");
+    expect(s.tryPending).toBe("H");
+  });
+
+  it("credits the interceptor in the defending team's box", () => {
+    const plays = [
+      play({ kind: "Pass", poss: "H", result: "Interception", playerId: 7, returner: 22 }),
+    ];
+    const box = computeBoxScore(plays, "A"); // A is the defense here
+    expect(box.def[22]?.int).toBe(1);
+    expect(box.def[22]?.fr).toBe(0);
+  });
+});

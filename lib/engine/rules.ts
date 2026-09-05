@@ -80,6 +80,24 @@ export function applyPlay(sit: Situation, play: PlayEvent): Situation {
   const crossedOwnGoal = sit.poss === "H" ? rawEnd <= 0 : rawEnd >= 100;
   const crossedAttackGoal = sit.poss === "H" ? rawEnd >= 100 : rawEnd <= 0;
 
+  // Defensive return touchdown (pick-six / scoop-and-score) — the DEFENSE scores.
+  if (play.result === "Pick 6" || play.result === "Fumble TD") {
+    const def = other(poss);
+    if (def === "H") scoreH += 6;
+    else scoreA += 6;
+    return {
+      qtr: sit.qtr,
+      poss: def,
+      down: 0,
+      dist: 0,
+      spot: def === "H" ? 97 : 3,
+      scoreH,
+      scoreA,
+      goalToGo: false,
+      tryPending: def,
+    };
+  }
+
   // Kick/punt return touchdowns are scored by the RECEIVING team, handled in
   // the Punt block below — so kicks never take this offense-TD path.
   const isTouchdown =

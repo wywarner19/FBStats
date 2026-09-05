@@ -139,6 +139,21 @@ export function PadA() {
           </div>
         )}
 
+      {(draft.result === "Interception" ||
+        draft.result === "Pick 6" ||
+        draft.result === "Fumble lost" ||
+        draft.result === "Fumble TD") && (
+        <div className="mb-1">
+          <RolePicker
+            label={`${draft.result.startsWith("Fumble") ? "RECOVERED" : "INTERCEPTED"} BY — # (${sit.poss === "H" ? game.setup.away.abbr : game.setup.home.abbr})`}
+            roster={def}
+            selected={draft.returner ?? null}
+            onPick={setReturner}
+            accent="flag"
+          />
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-2 gap-2">
         <span className={`${LABEL} text-[10px]`}>TACKLED BY — TAP TWO FOR AN ASSIST</span>
         <NumberEntry onEnter={enterTacklerNumber} label="type #" />

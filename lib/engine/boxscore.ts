@@ -78,10 +78,17 @@ export function computeBoxScore(plays: PlayEvent[], team?: TeamId): BoxScore {
 
     const tk = defenseMatch ? (p.tacklers ?? []) : [];
     for (const t of tk) {
-      const r = (box.def[t] ??= { tk: 0, ast: 0 });
+      const r = (box.def[t] ??= { tk: 0, ast: 0, int: 0, fr: 0 });
       // Two names on a play => shared/assisted; one name => solo tackle.
       if (tk.length > 1) r.ast++;
       else r.tk++;
+    }
+
+    // Interceptor / fumble recoverer (a defender) — stored in `returner`.
+    if (defenseMatch && p.returner != null) {
+      const r = (box.def[p.returner] ??= { tk: 0, ast: 0, int: 0, fr: 0 });
+      if (p.result === "Interception" || p.result === "Pick 6") r.int++;
+      else if (p.result === "Fumble lost" || p.result === "Fumble TD") r.fr++;
     }
   }
 

@@ -65,6 +65,8 @@ export type PlayResult =
   | "Incomplete"
   | "Sack"
   | "Interception"
+  | "Pick 6"
+  | "Fumble TD"
   | "Returned"
   | "Fair catch"
   | "Touchback"
@@ -349,6 +351,9 @@ export interface RecLine {
 export interface DefLine {
   tk: number;
   ast: number;
+  /** Interceptions and fumble recoveries credited to this defender. */
+  int: number;
+  fr: number;
 }
 export interface KickLine {
   paMade: number;

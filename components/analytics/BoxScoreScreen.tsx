@@ -33,7 +33,7 @@ function TeamBox({ game, team }: { game: GameState; team: TeamId }) {
     { title: "RUSHING", cols: "ATT · YDS · TD · LG", rows: mkRows(box.rush, (v: (typeof box.rush)[number]) => `${v.att} · ${v.yds} · ${v.td} · ${v.lg}`) },
     { title: "PASSING", cols: "C/ATT · YDS · TD · INT", rows: mkRows(box.pass, (v: (typeof box.pass)[number]) => `${v.cmp}/${v.att} · ${v.yds} · ${v.td} · ${v.int}`) },
     { title: "RECEIVING", cols: "TGT · REC · YDS · TD", rows: mkRows(box.rec, (v: (typeof box.rec)[number]) => `${v.tgt} · ${v.rec} · ${v.yds} · ${v.td}`) },
-    { title: "DEFENSE", cols: "TK · AST", rows: mkRows(box.def, (v: (typeof box.def)[number]) => `${v.tk} · ${v.ast}`) },
+    { title: "DEFENSE", cols: "TK · AST · INT · FR", rows: mkRows(box.def, (v: (typeof box.def)[number]) => `${v.tk} · ${v.ast} · ${v.int} · ${v.fr}`) },
     { title: "KICKING", cols: "PAT · FG", rows: mkRows(box.kick, (v: (typeof box.kick)[number]) => `${v.paMade}/${v.paAtt} · ${v.fgMade}/${v.fgAtt}`) },
   ];
 

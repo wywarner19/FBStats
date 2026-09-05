@@ -123,7 +123,7 @@ export function SeasonScreen() {
             {table("RUSHING", "ATT · YDS · TD · LG", agg.box.rush, (v: (typeof agg.box.rush)[number]) => `${v.att} · ${v.yds} · ${v.td} · ${v.lg}`)}
             {table("PASSING", "C/ATT · YDS · TD · INT", agg.box.pass, (v: (typeof agg.box.pass)[number]) => `${v.cmp}/${v.att} · ${v.yds} · ${v.td} · ${v.int}`)}
             {table("RECEIVING", "TGT · REC · YDS · TD", agg.box.rec, (v: (typeof agg.box.rec)[number]) => `${v.tgt} · ${v.rec} · ${v.yds} · ${v.td}`)}
-            {table("DEFENSE", "TK · AST", agg.box.def, (v: (typeof agg.box.def)[number]) => `${v.tk} · ${v.ast}`)}
+            {table("DEFENSE", "TK · AST · INT · FR", agg.box.def, (v: (typeof agg.box.def)[number]) => `${v.tk} · ${v.ast} · ${v.int} · ${v.fr}`)}
             {table("KICKING", "PAT · FG", agg.box.kick, (v: (typeof agg.box.kick)[number]) => `${v.paMade}/${v.paAtt} · ${v.fgMade}/${v.fgAtt}`)}
           </div>
         </>

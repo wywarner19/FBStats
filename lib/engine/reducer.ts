@@ -149,7 +149,8 @@ export function draftToPlay(
     kicker: type === "FG" ? draft.kicker : null,
     holder: type === "FG" ? draft.holder : null,
     snapper: type === "FG" ? draft.snapper : null,
-    returner: type === "Punt" ? (draft.returner ?? null) : null,
+    // The returner (punt/kick) or the defender who intercepted/recovered.
+    returner: draft.returner ?? null,
     scoring:
       result === "Touchdown"
         ? // A punt return TD is scored by the receiving team, not the punter's.

@@ -17,9 +17,9 @@ export const PLAY_TYPES: PlayType[] = [
 
 /** Valid results per play type, in the order they appear in the pad. */
 export const RESULTS: Record<PlayType, PlayResult[]> = {
-  Run: ["Tackle", "First down", "Out of bounds", "Touchdown", "Fumble lost"],
-  Pass: ["Complete", "Incomplete", "Sack", "Touchdown", "Interception", "Fumble lost"],
-  Sack: ["Tackle", "Fumble lost"],
+  Run: ["Tackle", "First down", "Out of bounds", "Touchdown", "Fumble lost", "Fumble TD"],
+  Pass: ["Complete", "Incomplete", "Sack", "Touchdown", "Interception", "Pick 6", "Fumble lost", "Fumble TD"],
+  Sack: ["Tackle", "Fumble lost", "Fumble TD"],
   Punt: ["Returned", "Fair catch", "Out of bounds", "Touchback", "Downed", "Touchdown"],
   FG: ["Made", "Missed", "Blocked"],
   Kneel: ["Tackle"],

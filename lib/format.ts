@@ -103,6 +103,14 @@ export function playText(setup: GameSetup, p: PlayEvent): string {
   if (p.result && p.result !== "—" && p.result !== "Tackle") t += ` · ${p.result}`;
   if (p.kind === "Pass" && p.passDetail) t += ` · ${p.passDetail}`;
   if (p.tacklers && p.tacklers.length) t += ` (T: ${p.tacklers.join(", ")})`;
+  // Interceptor / fumble recoverer (a defender).
+  if (
+    p.returner != null &&
+    (p.result === "Interception" || p.result === "Pick 6" || p.result === "Fumble lost" || p.result === "Fumble TD")
+  ) {
+    const verb = p.result.startsWith("Fumble") ? "REC" : "INT";
+    t += ` · ${verb} ${who(setup, p.returner, other(off))}`;
+  }
   return t;
 }
 
