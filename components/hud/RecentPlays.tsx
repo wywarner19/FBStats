@@ -29,7 +29,7 @@ export function RecentPlays() {
             <span className="font-semi font-semibold text-[11px] leading-none tracking-[.08em] text-dim-2 min-w-[74px]">
               {sitText(game.setup, atSnap)}
             </span>
-            <span className="flex-1 font-medium text-[14px] leading-[1.25] text-mist">
+            <span className={`flex-1 font-medium text-[14px] leading-[1.25] ${play.nullified ? "text-dim-2 line-through" : "text-mist"}`}>
               {playText(game.setup, play)}
             </span>
             {reviewStatus(play, game.setup).needsReview && (

@@ -404,3 +404,18 @@ describe("defensive return touchdowns and turnover attribution", () => {
     expect(box.def[22]?.fr).toBe(0);
   });
 });
+
+describe("nullified (penalty-voided) plays", () => {
+  it("contribute nothing to the situation/score", () => {
+    const before = sit({ poss: "H", spot: 20, scoreH: 0 });
+    const s = applyPlay(before, play({ kind: "Run", poss: "H", result: "Touchdown", end: 100, yards: 80, nullified: true }));
+    expect(s).toEqual(before); // unchanged
+  });
+  it("are excluded from the box score", () => {
+    const plays = [
+      play({ kind: "Run", poss: "H", playerId: 22, yards: 80, result: "Touchdown", nullified: true }),
+    ];
+    const box = computeBoxScore(plays, "H");
+    expect(box.rush[22]).toBeUndefined();
+  });
+});

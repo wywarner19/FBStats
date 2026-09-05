@@ -111,7 +111,7 @@ export function playText(setup: GameSetup, p: PlayEvent): string {
     const verb = p.result.startsWith("Fumble") ? "REC" : "INT";
     t += ` · ${verb} ${who(setup, p.returner, other(off))}`;
   }
-  return t;
+  return p.nullified ? `◌ VOID · ${t}` : t;
 }
 
 /** "2nd & 7 · NGT 45" for the situation a play was snapped from. */

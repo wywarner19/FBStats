@@ -18,6 +18,7 @@ export function FixPlayOverlay() {
 
   const adjustPlayYards = useGameStore((s) => s.adjustPlayYards);
   const toggleReviewFlag = useGameStore((s) => s.toggleReviewFlag);
+  const toggleNullify = useGameStore((s) => s.toggleNullify);
 
   const play = game.plays.find((p) => p.id === fixId);
   if (!play) return null;
@@ -63,6 +64,18 @@ export function FixPlayOverlay() {
         >
           ⚑ {play.review?.flagged ? "Flagged for review" : "Flag for review"}
         </button>
+        {!isPenalty && (
+          <button
+            onClick={() => toggleNullify(play.id)}
+            className={cx(
+              "min-h-[40px] px-3.5 rounded-[9px] border font-semibold text-[13px] leading-none cursor-pointer",
+              play.nullified ? "bg-danger-ink border-danger-edge text-danger" : "bg-panel-4 border-edge-2 text-dim hover:text-cloud",
+            )}
+            title="Wipe this play from the score & stats (called back by penalty) — keep it in the log"
+          >
+            ⊘ {play.nullified ? "Voided by penalty" : "Void (penalty)"}
+          </button>
+        )}
         {review.reasons
           .filter((r) => r !== "Flagged for review")
           .map((r) => (

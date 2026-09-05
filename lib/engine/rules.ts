@@ -53,6 +53,9 @@ const KICK_TYPES = new Set(["Punt", "FG"]);
  * downs, change of possession) lives here so undo/redo/edit stay deterministic.
  */
 export function applyPlay(sit: Situation, play: PlayEvent): Situation {
+  // A nullified play (wiped by an accepted penalty) contributes nothing.
+  if (play.nullified) return sit;
+
   // Penalties are handled by their own resolver at commit time; by the time a
   // penalty PlayEvent exists, its `end`/down/dist already reflect enforcement.
   if (play.kind === "Penalty") {

@@ -21,6 +21,7 @@ export function computeBoxScore(plays: PlayEvent[], team?: TeamId): BoxScore {
   const box: BoxScore = { rush: {}, pass: {}, rec: {}, def: {}, kick: {} };
 
   for (const p of plays) {
+    if (p.nullified) continue; // wiped by penalty — no stats
     const offenseMatch = team == null || p.poss === team;
     const defenseMatch = team == null || p.poss !== team;
     if (!offenseMatch && !defenseMatch) continue;

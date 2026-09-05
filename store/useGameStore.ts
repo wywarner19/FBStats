@@ -238,6 +238,7 @@ interface StoreState extends UIState {
   setSituation: (patch: { spot?: number; down?: number; dist?: number }) => void;
   adjustPlayYards: (id: string, delta: number) => void;
   toggleReviewFlag: (id: string) => void;
+  toggleNullify: (id: string) => void;
 
   // clock
   startClock: () => void;
@@ -855,6 +856,11 @@ export const useGameStore = create<StoreState>((set, get) => {
     toggleReviewFlag: (id) => {
       const s = get();
       s.dispatch({ type: "TOGGLE_FLAG", id });
+    },
+    toggleNullify: (id) => {
+      const s = get();
+      s.dispatch({ type: "TOGGLE_NULLIFY", id });
+      s.flash("Play voided by penalty — stats & score removed");
     },
 
     startClock: () => {

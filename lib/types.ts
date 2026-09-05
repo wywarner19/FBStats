@@ -209,6 +209,13 @@ export interface PlayEvent {
    */
   review?: PlayReview;
 
+  /**
+   * A play wiped out by an accepted penalty (e.g. a called-back touchdown). It
+   * stays in the log for the record but contributes nothing to the score,
+   * situation, or box score — only the penalty's yardage counts.
+   */
+  nullified?: boolean;
+
   note?: string;
 }
 

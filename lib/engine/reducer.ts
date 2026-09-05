@@ -49,6 +49,7 @@ export type GameAction =
   | { type: "EDIT_PLAY"; id: string; patch: Partial<PlayEvent> }
   | { type: "ADJUST_YARDS"; id: string; delta: number }
   | { type: "TOGGLE_FLAG"; id: string }
+  | { type: "TOGGLE_NULLIFY"; id: string }
   | { type: "SET_QB"; team: TeamId; num: number }
   | { type: "SET_CLOUD_ID"; cloudId: string }
   | { type: "SET_ROSTER_PHOTO"; photo: string | null }
@@ -335,6 +336,14 @@ export function gameReducer(g: GameState, action: GameAction): GameState {
             ? { ...p, review: { ...(p.review ?? {}), flagged: !p.review?.flagged } }
             : p,
         ),
+        updatedAt: Date.now(),
+      };
+    }
+
+    case "TOGGLE_NULLIFY": {
+      return {
+        ...g,
+        plays: g.plays.map((p) => (p.id === action.id ? { ...p, nullified: !p.nullified } : p)),
         updatedAt: Date.now(),
       };
     }
