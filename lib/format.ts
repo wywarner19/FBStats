@@ -151,8 +151,11 @@ export function reviewStatus(
   if (tackled && defenders > 0 && (!p.tacklers || p.tacklers.length === 0)) {
     reasons.push("No tackler");
   }
-  if (p.kind === "Pass" && offense > 0 && p.targetId == null) {
-    reasons.push("No intended receiver");
+  // Only a caught pass needs a receiver credited — an incompletion (no
+  // deflection) is a legitimate fast-path and shouldn't be flagged.
+  const caught = p.result === "Complete" || p.result === "Touchdown";
+  if (p.kind === "Pass" && caught && offense > 0 && p.targetId == null) {
+    reasons.push("No receiver credited");
   }
 
   return { needsReview: reasons.length > 0, reasons };

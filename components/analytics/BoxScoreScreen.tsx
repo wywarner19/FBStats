@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { computeBoxScore } from "@/lib/engine/boxscore";
 import { clockLabel, who } from "@/lib/format";
+import { cx } from "@/components/ui";
 import type { GameState, TeamId } from "@/lib/types";
 
 interface Row {
@@ -14,7 +16,6 @@ interface Row {
 
 function TeamBox({ game, team }: { game: GameState; team: TeamId }) {
   const openCard = useGameStore((s) => s.openCard);
-  const t = team === "H" ? game.setup.home : game.setup.away;
   const box = computeBoxScore(game.plays, team);
 
   const mkRows = (obj: Record<number, unknown>, fmt: (v: never) => string): Row[] =>
@@ -36,16 +37,8 @@ function TeamBox({ game, team }: { game: GameState; team: TeamId }) {
     { title: "KICKING", cols: "PAT · FG", rows: mkRows(box.kick, (v: (typeof box.kick)[number]) => `${v.paMade}/${v.paAtt} · ${v.fgMade}/${v.fgAtt}`) },
   ];
 
-  const accent = team === "H" ? "text-turf" : "text-flag";
-
   return (
     <div>
-      <div className="flex items-baseline gap-2 mb-3">
-        <span className={`font-cond font-bold text-[20px] leading-none ${accent}`}>{t.name}</span>
-        <span className="font-semi font-semibold text-[11px] leading-none tracking-[.16em] text-dim uppercase">
-          {team === "H" ? "Home" : "Away"}
-        </span>
-      </div>
       <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))]">
         {tables.map((tbl) => (
           <div key={tbl.title} className="bg-panel border border-edge rounded-xl overflow-hidden">
@@ -78,19 +71,44 @@ function TeamBox({ game, team }: { game: GameState; team: TeamId }) {
 export function BoxScoreScreen() {
   const game = useGameStore((s) => s.game);
   const sit = useGameStore((s) => s.situation);
+  const [team, setTeam] = useState<TeamId>("H");
+  const t = team === "H" ? game.setup.home : game.setup.away;
 
   return (
     <div className="flex-1 overflow-auto px-7 pt-6 pb-[50px]">
-      <div className="flex items-center gap-4 mb-5">
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
         <h2 className="m-0 font-cond font-bold text-[30px] leading-none">Live box score</h2>
         <span className="font-medium text-[14px] leading-none text-dim">
           {game.setup.home.abbr} {sit.scoreH} · {game.setup.away.abbr} {sit.scoreA} · Q{game.qtr} {clockLabel(game.clockSec)}
         </span>
       </div>
-      <div className="flex flex-col gap-8">
-        <TeamBox game={game} team="H" />
-        <TeamBox game={game} team="A" />
+
+      {/* Home / Away toggle — show one team at a time. */}
+      <div className="inline-flex gap-1 p-1 mb-5 bg-panel-3 border border-edge rounded-[11px]">
+        {(["H", "A"] as TeamId[]).map((s) => {
+          const st = s === "H" ? game.setup.home : game.setup.away;
+          return (
+            <button
+              key={s}
+              onClick={() => setTeam(s)}
+              className={cx(
+                "min-h-[40px] px-4 rounded-[8px] font-cond font-bold text-[15px] leading-none tracking-[.04em] cursor-pointer",
+                team === s ? "bg-panel-4 border border-turf text-cloud" : "bg-transparent border border-transparent text-dim hover:text-cloud",
+              )}
+            >
+              {st.abbr} · {s === "H" ? "Home" : "Away"}
+            </button>
+          );
+        })}
       </div>
+
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="font-cond font-bold text-[20px] leading-none text-turf">{t.name}</span>
+        <span className="font-medium text-[13px] leading-none text-dim">
+          {team === "H" ? sit.scoreH : sit.scoreA} pts
+        </span>
+      </div>
+      <TeamBox game={game} team={team} />
     </div>
   );
 }

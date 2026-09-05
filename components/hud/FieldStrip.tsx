@@ -37,22 +37,27 @@ export function FieldStrip() {
   const attackRight = (sit.poss === "H") !== flipped;
   const attackGoal = sit.poss === "H" ? 100 : 0;
 
-  const spotFromX = (clientX: number, rect: DOMRect) => {
-    const raw = ((clientX - rect.left) / rect.width * 100 - 11) / 0.78;
-    let y = clampSpot(Math.round(raw));
-    if (flipped) y = clampSpot(100 - y);
-    return y;
+  // Drag (or tap) the ball along the field to set where the play ended. Reaching
+  // the attacking goal line (or the end-zone gutter) registers a touchdown.
+  const applyFromX = (clientX: number, rect: DOMRect) => {
+    let raw = ((clientX - rect.left) / rect.width * 100 - 11) / 0.78; // unclamped
+    if (flipped) raw = 100 - raw;
+    const beyondGoal = sit.poss === "H" ? raw >= 100 : raw <= 0;
+    if (beyondGoal) {
+      scoreTd();
+    } else {
+      setEndFromField(clampSpot(Math.round(raw)));
+    }
   };
 
-  // Drag (or tap) the ball along the field to set where the play ended.
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     dragging.current = true;
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    setEndFromField(spotFromX(e.clientX, e.currentTarget.getBoundingClientRect()));
+    applyFromX(e.clientX, e.currentTarget.getBoundingClientRect());
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging.current) return;
-    setEndFromField(spotFromX(e.clientX, e.currentTarget.getBoundingClientRect()));
+    applyFromX(e.clientX, e.currentTarget.getBoundingClientRect());
   };
   const onUp = () => {
     dragging.current = false;
