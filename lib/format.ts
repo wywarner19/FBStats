@@ -46,12 +46,23 @@ export function jersey(num: number | null | undefined): string {
   return num == null || num < 0 ? "#" : String(num);
 }
 
-/** "#22 D. Whitfield" for a jersey number, searching both rosters. */
-export function who(setup: GameSetup, num: number | null): string {
+/**
+ * "#22 D. Whitfield" for a jersey number. Both teams usually share numbers, so
+ * pass the `team` the player belongs to (the play's possession for a ball
+ * carrier, the defense for a tackler) to resolve the right roster; without it,
+ * both rosters are searched (home first) as a best-effort fallback.
+ */
+export function who(setup: GameSetup, num: number | null, team?: TeamId): string {
   if (num == null) return "";
   if (num < 0) return "#? unnamed";
-  const p = allPlayers(setup).find((x) => x.num === num);
+  const roster = team ? (team === "H" ? setup.home.roster : setup.away.roster) : allPlayers(setup);
+  const p = roster.find((x) => x.num === num) ?? (team ? allPlayers(setup).find((x) => x.num === num) : undefined);
   return p ? `#${p.num} ${p.name}` : `#${num}`;
+}
+
+/** The opposite team of `team`. */
+function other(team: TeamId): TeamId {
+  return team === "H" ? "A" : "H";
 }
 
 export function offenseRoster(setup: GameSetup, poss: TeamId): Player[] {
@@ -76,10 +87,13 @@ export function playText(setup: GameSetup, p: PlayEvent): string {
     return `PENALTY — ${p.penalty}${p.penYds ? ` (${p.penYds} yds)` : ""}${p.enforceOnKickoff ? " · on kickoff" : ""}`;
   }
   const y = p.yards > 0 ? `+${p.yards}` : `${p.yards}`;
+  // Ball carrier / passer / receiver / kicker are on the possessing team;
+  // tacklers are on the defense. Resolve names against the right roster.
+  const off = p.poss;
   let t = p.kind.toUpperCase();
-  const nm = p.playerId != null ? who(setup, p.playerId) : "";
-  const tgt = p.targetId != null ? who(setup, p.targetId) : "";
-  if (p.kind === "FG" && p.kicker != null) t += ` ${who(setup, p.kicker)}`;
+  const nm = p.playerId != null ? who(setup, p.playerId, off) : "";
+  const tgt = p.targetId != null ? who(setup, p.targetId, off) : "";
+  if (p.kind === "FG" && p.kicker != null) t += ` ${who(setup, p.kicker, off)}`;
   else if (nm) t += ` ${nm}`;
   if (p.kind === "Pass" && tgt) {
     const arrow = p.result === "Incomplete" || p.result === "Interception" ? " (for " : " → ";

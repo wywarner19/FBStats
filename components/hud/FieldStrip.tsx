@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { clampSpot, direction } from "@/lib/engine/rules";
 import { spotLabel } from "@/lib/engine/rules";
-import { LABEL } from "@/components/ui";
+import { QUICK_YARDS } from "@/lib/engine/constants";
+import { LABEL, cx } from "@/components/ui";
 
 // Field → screen mapping used by the prototype: an absolute yard `y` in [0,100]
 // maps to `y * 0.78 + 11` percent, leaving an end-zone gutter on each side.
@@ -15,8 +17,10 @@ export function FieldStrip() {
   const sit = useGameStore((s) => s.situation);
   const draft = useGameStore((s) => s.draft);
   const setEndFromField = useGameStore((s) => s.setEndFromField);
+  const setYards = useGameStore((s) => s.setYards);
   const flipped = useGameStore((s) => s.fieldFlipped);
   const toggleFieldFlip = useGameStore((s) => s.toggleFieldFlip);
+  const [typed, setTyped] = useState("");
 
   const dir = direction(sit.poss);
   const ftd = clampSpot(sit.spot + dir * sit.dist);
@@ -111,6 +115,36 @@ export function FieldStrip() {
         {/* Hash marks */}
         <div className="absolute left-[22px] right-[22px] h-px bg-white/10 top-[62px]" />
         <div className="absolute left-[22px] right-[22px] h-px bg-white/10 top-[118px]" />
+      </div>
+
+      {/* Or set the gain/loss directly, without tapping the field. */}
+      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+        <span className={`${LABEL} text-[10px] mr-0.5`}>OR YARDS</span>
+        {QUICK_YARDS.map((y) => (
+          <button
+            key={y}
+            onClick={() => setYards(y)}
+            className={cx(
+              "min-h-[34px] min-w-[38px] px-2 rounded-[8px] border font-cond font-bold text-[15px] leading-none cursor-pointer",
+              draft.yards === y ? "bg-panel-4 border-turf text-cloud" : "bg-panel-4 border-edge-2 text-slate hover:border-turf hover:text-cloud",
+            )}
+          >
+            {y > 0 ? `+${y}` : y}
+          </button>
+        ))}
+        <input
+          value={typed}
+          inputMode="numeric"
+          placeholder="±#"
+          onChange={(e) => setTyped(e.target.value.replace(/[^0-9-]/g, "").slice(0, 4))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && typed !== "" && typed !== "-") {
+              setYards(parseInt(typed, 10) || 0);
+              setTyped("");
+            }
+          }}
+          className="w-14 h-[34px] bg-panel-3 border border-edge-3 rounded-[8px] text-center font-cond font-bold text-[15px] text-cloud outline-none placeholder:text-dim-2"
+        />
       </div>
     </div>
   );

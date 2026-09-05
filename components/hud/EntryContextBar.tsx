@@ -17,9 +17,10 @@ export function EntryContextBar() {
   const setHash = useGameStore((s) => s.setHash);
   const openQbPicker = useGameStore((s) => s.openQbPicker);
   const nudgeSpot = useGameStore((s) => s.nudgeSpot);
+  const flipped = useGameStore((s) => s.fieldFlipped);
 
   const qbNum = game.qb?.[sit.poss] ?? null;
-  const qbLabel = qbNum != null ? who(game.setup, qbNum) : "Set QB";
+  const qbLabel = qbNum != null ? who(game.setup, qbNum, sit.poss) : "Set QB";
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2 px-4 bg-panel-2 border-b border-edge flex-none">
@@ -52,20 +53,20 @@ export function EntryContextBar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="font-semi font-semibold text-[10px] leading-none tracking-[.16em] text-dim">BALL SPOT</span>
+        <span className="font-semi font-semibold text-[10px] leading-none tracking-[.16em] text-dim">MOVE BALL</span>
         <button
-          onClick={() => nudgeSpot(-1)}
-          className="min-h-[34px] w-11 bg-panel-4 border border-edge-3 rounded-[8px] text-dim font-semibold text-[15px] leading-none cursor-pointer hover:text-cloud"
-          title="Move the line of scrimmage back one yard"
+          onClick={() => nudgeSpot(flipped ? 1 : -1)}
+          className="min-h-[44px] w-[60px] bg-panel-4 border border-edge-2 rounded-[9px] text-cloud font-bold text-[26px] leading-none cursor-pointer hover:border-turf hover:text-turf active:scale-95"
+          title="Move the ball one yard left on the field"
         >
-          −1
+          ‹
         </button>
         <button
-          onClick={() => nudgeSpot(1)}
-          className="min-h-[34px] w-11 bg-panel-4 border border-edge-3 rounded-[8px] text-dim font-semibold text-[15px] leading-none cursor-pointer hover:text-cloud"
-          title="Move the line of scrimmage forward one yard"
+          onClick={() => nudgeSpot(flipped ? -1 : 1)}
+          className="min-h-[44px] w-[60px] bg-panel-4 border border-edge-2 rounded-[9px] text-cloud font-bold text-[26px] leading-none cursor-pointer hover:border-turf hover:text-turf active:scale-95"
+          title="Move the ball one yard right on the field"
         >
-          +1
+          ›
         </button>
       </div>
     </div>

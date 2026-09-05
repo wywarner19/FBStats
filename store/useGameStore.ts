@@ -70,6 +70,7 @@ export type Overlay =
   | "edit"
   | "addPlayer"
   | "feedback"
+  | "situation"
   | "qb"
   | "timeout"
   | "kickoff"
@@ -232,6 +233,8 @@ interface StoreState extends UIState {
   // QB / spot / review
   setQb: (team: TeamId, num: number) => void;
   nudgeSpot: (delta: number) => void;
+  /** Manually override the live situation (down / distance / ball spot). */
+  setSituation: (patch: { spot?: number; down?: number; dist?: number }) => void;
   adjustPlayYards: (id: string, delta: number) => void;
   toggleReviewFlag: (id: string) => void;
 
@@ -571,7 +574,14 @@ export const useGameStore = create<StoreState>((set, get) => {
       get().patchDraft({ holder: get().draft.holder === num ? null : num }),
     setSnapper: (num) =>
       get().patchDraft({ snapper: get().draft.snapper === num ? null : num }),
-    setYards: (y) => get().patchDraft({ yards: y }, true),
+    setYards: (y) => {
+      // Set yards AND the derived end spot so the field/box stay consistent
+      // whether yards came from a field tap or a direct entry.
+      const s = get();
+      const dir = s.situation.poss === "H" ? 1 : -1;
+      const end = Math.max(0, Math.min(100, s.situation.spot + dir * y));
+      s.patchDraft({ yards: y, end }, true);
+    },
     setEndFromField: (endSpot) => {
       const s = get();
       const dir = s.situation.poss === "H" ? 1 : -1;
@@ -825,6 +835,14 @@ export const useGameStore = create<StoreState>((set, get) => {
     nudgeSpot: (delta) => {
       const s = get();
       s.dispatch({ type: "NUDGE_SPOT", delta });
+    },
+    setSituation: (patch) => {
+      const s = get();
+      s.dispatch({
+        type: "CONTROL",
+        control: { op: "setSituation", spot: patch.spot, down: patch.down, dist: patch.dist, label: "Situation corrected" },
+      });
+      s.flash("Situation updated");
     },
     adjustPlayYards: (id, delta) => {
       const s = get();

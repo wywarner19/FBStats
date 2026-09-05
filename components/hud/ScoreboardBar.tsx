@@ -77,16 +77,24 @@ export function ScoreboardBar() {
         </div>
       </div>
 
-      {/* Situation */}
+      {/* Situation — tap the down or ball spot to correct it */}
       <div className="flex-1 flex items-center gap-[22px] px-[22px]">
-        <div>
-          <div className="font-semi font-semibold text-[10px] leading-none tracking-[.18em] text-dim mb-1">SITUATION</div>
-          <div className="font-cond font-bold text-[26px] leading-none text-turf">{downLabel(sit)}</div>
-        </div>
-        <div>
-          <div className="font-semi font-semibold text-[10px] leading-none tracking-[.18em] text-dim mb-1">BALL ON</div>
-          <div className="font-cond font-bold text-[26px] leading-none">{spotLabel(sit.spot, game.setup)}</div>
-        </div>
+        <button
+          onClick={() => setOverlay("situation")}
+          className="text-left bg-transparent border-0 p-0 cursor-pointer group"
+          title="Tap to set down &amp; distance"
+        >
+          <div className="font-semi font-semibold text-[10px] leading-none tracking-[.18em] text-dim mb-1">SITUATION ✎</div>
+          <div className="font-cond font-bold text-[26px] leading-none text-turf group-hover:brightness-110">{downLabel(sit)}</div>
+        </button>
+        <button
+          onClick={() => setOverlay("situation")}
+          className="text-left bg-transparent border-0 p-0 cursor-pointer group"
+          title="Tap to set the ball spot"
+        >
+          <div className="font-semi font-semibold text-[10px] leading-none tracking-[.18em] text-dim mb-1">BALL ON ✎</div>
+          <div className="font-cond font-bold text-[26px] leading-none text-cloud group-hover:text-turf">{spotLabel(sit.spot, game.setup)}</div>
+        </button>
         <div>
           <div className="font-semi font-semibold text-[10px] leading-none tracking-[.18em] text-dim mb-1">POSSESSION</div>
           <button
