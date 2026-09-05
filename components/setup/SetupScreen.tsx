@@ -120,8 +120,33 @@ export function SetupScreen() {
           </div>
 
           <GameInfoFields />
+          <Preferences />
         </div>
       </div>
+    </div>
+  );
+}
+
+function Preferences() {
+  const askClock = useGameStore((s) => s.askClock);
+  const setAskClock = useGameStore((s) => s.setAskClock);
+  return (
+    <div>
+      <div className={`${LABEL} text-[11px] tracking-[.2em] mb-3`}>PREFERENCES</div>
+      <button
+        onClick={() => setAskClock(!askClock)}
+        className={`${CARD} w-full flex items-center justify-between px-4 py-3.5 cursor-pointer text-left`}
+      >
+        <div>
+          <div className="font-semibold text-[16px] leading-none text-cloud">Ask for game clock each play</div>
+          <div className="mt-1.5 text-[12px] leading-[1.4] text-dim-2">
+            After you commit a play, a quick prompt captures the exact time. You can also skip or turn it off from that prompt.
+          </div>
+        </div>
+        <span className={cx("relative w-[46px] h-[26px] rounded-full flex-none", askClock ? "bg-turf" : "bg-edge-2")}>
+          <span className={cx("absolute top-0.5 w-[22px] h-[22px] rounded-full bg-ink transition-all", askClock ? "left-[22px]" : "left-0.5")} />
+        </span>
+      </button>
     </div>
   );
 }

@@ -24,6 +24,7 @@ import { PlayerEditOverlay } from "@/components/overlays/PlayerEditOverlay";
 import { AddPlayerOverlay } from "@/components/overlays/AddPlayerOverlay";
 import { FeedbackOverlay } from "@/components/overlays/FeedbackOverlay";
 import { SetSituationOverlay } from "@/components/overlays/SetSituationOverlay";
+import { ClockPromptOverlay } from "@/components/overlays/ClockPromptOverlay";
 import { TryConversionOverlay } from "@/components/overlays/TryConversionOverlay";
 import { QbPickerOverlay } from "@/components/overlays/QbPickerOverlay";
 import { TimeoutOverlay } from "@/components/overlays/TimeoutOverlay";
@@ -81,6 +82,7 @@ export default function Page() {
       {overlay === "addPlayer" && <AddPlayerOverlay />}
       {overlay === "feedback" && <FeedbackOverlay />}
       {overlay === "situation" && <SetSituationOverlay />}
+      {overlay === "clock" && <ClockPromptOverlay />}
       {overlay === "qb" && <QbPickerOverlay />}
       {overlay === "timeout" && <TimeoutOverlay />}
       {overlay === "kickoff" && <KickoffOverlay />}

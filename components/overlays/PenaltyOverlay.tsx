@@ -1,8 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { PENALTIES, CLOCK_NUDGES } from "@/lib/engine/constants";
+
+// Dead-ball 15-yarders — after a score these are carried to the ensuing
+// kickoff (NFHS), so default the enforcement there when flagged during a try.
+const DEAD_BALL_FOULS = new Set([
+  "Personal Foul",
+  "Unsportsmanlike Conduct",
+  "Illegal Helmet Contact / Spearing",
+  "Horse Collar Tackle",
+  "Face Mask (15)",
+]);
 import { penaltyPreview } from "@/lib/engine/reducer";
 import { clampSpot, direction, spotLabel } from "@/lib/engine/rules";
 import { ClockField } from "@/components/hud/ClockField";
@@ -21,6 +31,11 @@ export function PenaltyOverlay() {
   // During a try, a foul can be enforced on the try or on the ensuing kickoff.
   const duringTry = !!sit.tryPending;
   const [onKickoff, setOnKickoff] = useState(false);
+  // Default a dead-ball foul flagged after a score to the kickoff (the common
+  // post-TD unsportsmanlike case); still overridable with the toggle.
+  useEffect(() => {
+    if (duringTry && pen) setOnKickoff(DEAD_BALL_FOULS.has(pen.name));
+  }, [pen, duringTry]);
 
   // Spot-of-foul enforcement. Required for some fouls; optional for any.
   const [optInFoulSpot, setOptInFoulSpot] = useState(false);

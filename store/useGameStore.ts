@@ -71,6 +71,7 @@ export type Overlay =
   | "addPlayer"
   | "feedback"
   | "situation"
+  | "clock"
   | "qb"
   | "timeout"
   | "kickoff"
@@ -88,6 +89,10 @@ interface UIState {
   theme: Theme;
   /** Mirror the field display so its orientation matches the user's vantage. */
   fieldFlipped: boolean;
+  /** Prompt for the game clock after each committed play. */
+  askClock: boolean;
+  /** The play whose clock the clock-prompt overlay is editing. */
+  clockEditId: string | null;
   screen: Screen;
   model: EntryModel;
   padMode: "off" | "def";
@@ -135,6 +140,7 @@ interface StoreState extends UIState {
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
   toggleFieldFlip: () => void;
+  setAskClock: (b: boolean) => void;
   openFeedback: () => void;
   setScreen: (s: Screen) => void;
   setModel: (m: EntryModel) => void;
@@ -260,6 +266,17 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 const THEME_KEY = "fb-theme";
 const FIELD_FLIP_KEY = "fb-field-flip";
+const ASK_CLOCK_KEY = "fb-ask-clock";
+
+/** Read the persisted "ask for clock on commit" preference; default on. */
+function readAskClock(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return localStorage.getItem(ASK_CLOCK_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
 
 /** Read the persisted field-flip preference (client only); default off. */
 function readFieldFlip(): boolean {
@@ -318,6 +335,8 @@ export const useGameStore = create<StoreState>((set, get) => {
       hydrated: false,
       theme: readInitialTheme(),
       fieldFlipped: readFieldFlip(),
+      askClock: readAskClock(),
+      clockEditId: null,
       screen: "games",
       model: "A",
       padMode: "off",
@@ -463,6 +482,14 @@ export const useGameStore = create<StoreState>((set, get) => {
       }
       set({ fieldFlipped });
       get().flash(fieldFlipped ? "Field flipped" : "Field back to default", true);
+    },
+    setAskClock: (askClock) => {
+      try {
+        localStorage.setItem(ASK_CLOCK_KEY, askClock ? "1" : "0");
+      } catch {
+        /* private mode */
+      }
+      set({ askClock });
     },
     openFeedback: () => set({ overlay: "feedback" }),
     setScreen: (screen) => set({ screen, overlay: null, inGame: GAME_SCREENS.includes(screen) }),
@@ -611,7 +638,14 @@ export const useGameStore = create<StoreState>((set, get) => {
       s.dispatch({ type: "COMMIT_PLAY", draft: s.draft, clock });
       // Keep the current hash for the next play (the ball stays on a hash).
       set({ draft: blankDraft(s.draft.hash), step: 0 });
-      s.flash("Play logged");
+      // Optionally prompt for the exact game clock on this play.
+      const g = get().game;
+      const lastId = g.plays[g.plays.length - 1]?.id ?? null;
+      if (get().askClock && lastId) {
+        set({ overlay: "clock", clockEditId: lastId });
+      } else {
+        s.flash("Play logged");
+      }
     },
     undo: () => {
       const s = get();
