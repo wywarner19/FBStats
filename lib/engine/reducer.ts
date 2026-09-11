@@ -6,6 +6,9 @@ import type {
   Player,
   PlayDraft,
   PlayEvent,
+  PlayKind,
+  PlayResult,
+  Scoring,
   Situation,
   TeamId,
   TryType,
@@ -15,9 +18,29 @@ import {
   deriveSituation,
   direction,
   ordinal,
+  other,
   resolvePenalty,
   spotLabel,
 } from "./rules";
+
+/**
+ * The scoring marker for a scrimmage-play result (offense TD, defensive return
+ * TD, or safety). Shared by live entry (`draftToPlay`) and the edit path
+ * (FixPlayOverlay) so a play flags the same way in the broadcast feed whether
+ * it was typed in live or corrected after the fact. Never consulted by the
+ * fold, which computes the score from `result` directly.
+ */
+export function scoringForResult(result: PlayResult, kind: PlayKind, poss: TeamId): Scoring | null {
+  if (result === "Touchdown") {
+    // A punt/kick return TD is scored by the receiving team, not the kicker's.
+    return { team: kind === "Punt" ? other(poss) : poss, kind: "TD", points: 6 };
+  }
+  if (result === "Pick 6" || result === "Fumble TD") {
+    return { team: other(poss), kind: "TD", points: 6 };
+  }
+  if (result === "Safety") return { team: other(poss), kind: "Safety", points: 2 };
+  return null;
+}
 
 /**
  * Actions the pure game reducer understands. The reducer never touches the
@@ -152,11 +175,7 @@ export function draftToPlay(
     snapper: type === "FG" ? draft.snapper : null,
     // The returner (punt/kick) or the defender who intercepted/recovered.
     returner: draft.returner ?? null,
-    scoring:
-      result === "Touchdown"
-        ? // A punt return TD is scored by the receiving team, not the punter's.
-          { team: type === "Punt" ? (sit.poss === "H" ? "A" : "H") : sit.poss, kind: "TD", points: 6 }
-        : null,
+    scoring: scoringForResult(result, type, sit.poss),
     review: draft.flag ? { flagged: true } : undefined,
   };
 }
