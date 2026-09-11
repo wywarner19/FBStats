@@ -260,13 +260,24 @@ function applyControlEvent(sit: Situation, play: PlayEvent): Situation {
       const down = c.down ?? sit.down;
       const dist = c.dist ?? sit.dist;
       const poss = c.team ?? sit.poss;
+      // A score override marks this as a catch-up ("panic") reconcile rather
+      // than an ordinary spot correction.
+      const isCatchUp = c.scoreH != null || c.scoreA != null;
       return {
         ...sit,
         poss,
         spot,
         down,
         dist,
+        // Absolute score override (catch-up). Omitted on an ordinary spot
+        // correction, which leaves the folded score untouched.
+        scoreH: c.scoreH ?? sit.scoreH,
+        scoreA: c.scoreA ?? sit.scoreA,
         goalToGo: isGoalToGo(spot, poss, dist),
+        // Catch-up reconciles to the live game, so any unresolved try / pending
+        // kickoff-penalty state from before is cleared — the user is telling us
+        // exactly where the game is now.
+        ...(isCatchUp ? { tryPending: null, kickoffPenalty: 0 } : {}),
       };
     }
     case "returnTd": {

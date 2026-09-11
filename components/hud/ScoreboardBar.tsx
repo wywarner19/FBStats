@@ -109,6 +109,13 @@ export function ScoreboardBar() {
       {/* Actions */}
       <div className="flex items-center gap-2 px-[18px] border-l border-edge">
         <button
+          onClick={() => setOverlay("catchup")}
+          className="min-h-[52px] px-[18px] bg-danger-ink border border-danger-edge rounded-[10px] text-danger font-cond font-bold text-[14px] leading-none tracking-[.08em] cursor-pointer"
+          title="Fell behind? Set the score, clock and situation to the live game in one step"
+        >
+          CATCH&nbsp;UP
+        </button>
+        <button
           onClick={openPenalty}
           className="min-h-[52px] px-[18px] bg-flag-ink border border-flag-edge rounded-[10px] text-flag font-cond font-bold text-[14px] leading-none tracking-[.1em] cursor-pointer"
         >

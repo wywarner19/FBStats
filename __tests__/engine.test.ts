@@ -6,7 +6,7 @@ import {
   spotLabel,
 } from "@/lib/engine/rules";
 import { computeBoxScore } from "@/lib/engine/boxscore";
-import { blankDraft, currentSituation, gameReducer } from "@/lib/engine/reducer";
+import { blankDraft, currentSituation, gameReducer, scoringForResult } from "@/lib/engine/reducer";
 import { demoGame, newGame } from "@/lib/engine/factory";
 import { PENALTIES } from "@/lib/engine/constants";
 import type { PlayEvent, Situation } from "@/lib/types";
@@ -417,5 +417,89 @@ describe("nullified (penalty-voided) plays", () => {
     ];
     const box = computeBoxScore(plays, "H");
     expect(box.rush[22]).toBeUndefined();
+  });
+});
+
+describe("catch-up (panic) score override", () => {
+  it("setSituation with score overrides the folded score", () => {
+    const before = sit({ poss: "H", scoreH: 7, scoreA: 0 });
+    const next = applyPlay(
+      before,
+      play({
+        kind: "Control",
+        result: "—",
+        control: { op: "setSituation", team: "A", spot: 40, down: 1, dist: 10, scoreH: 21, scoreA: 14, label: "Caught up" },
+      }),
+    );
+    expect(next.scoreH).toBe(21);
+    expect(next.scoreA).toBe(14);
+    expect(next.poss).toBe("A");
+    expect(next.down).toBe(1);
+  });
+
+  it("a later scoring play increments from the caught-up score", () => {
+    const g = newGame();
+    let s = gameReducer(g, {
+      type: "CONTROL",
+      control: { op: "setSituation", team: "H", spot: 97, down: 1, dist: 3, scoreH: 21, scoreA: 14, label: "Caught up" },
+    });
+    // HOME punches it in from the 3 (crosses the goal → TD, +6).
+    s = gameReducer(s, { type: "COMMIT_PLAY", draft: { ...blankDraft(), type: "Run", playerId: 22, yards: 3, result: "Tackle" }, clock: "5:00" });
+    const cur = currentSituation(s);
+    expect(cur.scoreH).toBe(27);
+    expect(cur.scoreA).toBe(14);
+  });
+
+  it("a plain situation correction leaves the score untouched", () => {
+    const before = sit({ poss: "H", scoreH: 10, scoreA: 3 });
+    const next = applyPlay(before, play({ kind: "Control", result: "—", control: { op: "setSituation", spot: 50, label: "Spot" } }));
+    expect(next.scoreH).toBe(10);
+    expect(next.scoreA).toBe(3);
+    expect(next.spot).toBe(50);
+  });
+});
+
+describe("safety", () => {
+  it("a Safety result awards 2 to the defense and free-kicks to them", () => {
+    const before = sit({ poss: "H", spot: 3, scoreH: 0, scoreA: 0 });
+    const next = applyPlay(before, play({ kind: "Run", poss: "H", result: "Safety" }));
+    expect(next.scoreA).toBe(2); // defense (AWAY) scores
+    expect(next.scoreH).toBe(0);
+    expect(next.poss).toBe("A"); // AWAY receives the free kick
+  });
+});
+
+describe("catch-up hardening", () => {
+  it("clears a pending try when reconciling the score", () => {
+    // A TD is on the board (try pending), then the user catches up to reality.
+    const afterTd = applyPlay(sit({ poss: "H", spot: 25 }), play({ result: "Touchdown", end: 100, yards: 75 }));
+    expect(afterTd.tryPending).toBe("H");
+    const caught = applyPlay(
+      afterTd,
+      play({ kind: "Control", result: "—", control: { op: "setSituation", team: "A", spot: 20, down: 1, dist: 10, scoreH: 21, scoreA: 14, label: "Caught up" } }),
+    );
+    expect(caught.tryPending ?? null).toBeNull();
+    expect(caught.scoreH).toBe(21);
+    expect(caught.poss).toBe("A");
+  });
+});
+
+describe("safety — Sack", () => {
+  it("a sack in the offense's own end zone is a safety for the defense", () => {
+    const before = sit({ poss: "A", spot: 97, scoreH: 0, scoreA: 0 });
+    const next = applyPlay(before, play({ kind: "Sack", poss: "A", result: "Safety" }));
+    expect(next.scoreH).toBe(2); // defense (HOME) scores
+    expect(next.poss).toBe("H"); // HOME receives the free kick
+  });
+});
+
+describe("scoring marker — live entry vs edit symmetry", () => {
+  it("marks return TDs and safeties, not ordinary plays", () => {
+    expect(scoringForResult("Touchdown", "Run", "H")).toEqual({ team: "H", kind: "TD", points: 6 });
+    expect(scoringForResult("Touchdown", "Punt", "H")).toEqual({ team: "A", kind: "TD", points: 6 });
+    expect(scoringForResult("Pick 6", "Pass", "H")).toEqual({ team: "A", kind: "TD", points: 6 });
+    expect(scoringForResult("Safety", "Run", "H")).toEqual({ team: "A", kind: "Safety", points: 2 });
+    expect(scoringForResult("Tackle", "Run", "H")).toBeNull();
+    expect(scoringForResult("Complete", "Pass", "H")).toBeNull();
   });
 });

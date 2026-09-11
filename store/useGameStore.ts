@@ -71,6 +71,7 @@ export type Overlay =
   | "addPlayer"
   | "feedback"
   | "situation"
+  | "catchup"
   | "clock"
   | "qb"
   | "timeout"
@@ -242,6 +243,21 @@ interface StoreState extends UIState {
   nudgeSpot: (delta: number) => void;
   /** Manually override the live situation (down / distance / ball spot). */
   setSituation: (patch: { spot?: number; down?: number; dist?: number }) => void;
+  /**
+   * Panic / catch-up: reconcile the whole game state to reality in one shot —
+   * score, quarter, clock, possession and down/distance/spot — when the log has
+   * fallen behind the live game. Logged as one control event so it undoes.
+   */
+  catchUp: (patch: {
+    scoreH?: number;
+    scoreA?: number;
+    qtr?: number;
+    clockSec?: number;
+    poss?: TeamId;
+    down?: number;
+    dist?: number;
+    spot?: number;
+  }) => void;
   adjustPlayYards: (id: string, delta: number) => void;
   toggleReviewFlag: (id: string) => void;
   toggleNullify: (id: string) => void;
@@ -881,6 +897,29 @@ export const useGameStore = create<StoreState>((set, get) => {
         control: { op: "setSituation", spot: patch.spot, down: patch.down, dist: patch.dist, label: "Situation corrected" },
       });
       s.flash("Situation updated");
+    },
+    catchUp: (patch) => {
+      const s = get();
+      // One control event carries score + possession + down/distance/spot so the
+      // fold reconciles and the whole thing still undoes as a unit-ish (the
+      // quarter/clock are live values, set alongside).
+      s.dispatch({
+        type: "CONTROL",
+        control: {
+          op: "setSituation",
+          team: patch.poss,
+          spot: patch.spot,
+          down: patch.down,
+          dist: patch.dist,
+          scoreH: patch.scoreH,
+          scoreA: patch.scoreA,
+          label: "Caught up to live game",
+        },
+      });
+      if (patch.qtr != null) s.dispatch({ type: "SET_QUARTER", qtr: patch.qtr });
+      if (patch.clockSec != null) s.dispatch({ type: "SET_CLOCK", sec: patch.clockSec });
+      set({ overlay: null, draft: blankDraft(s.draft.hash), step: 0 });
+      s.flash("Caught up to the live game");
     },
     adjustPlayYards: (id, delta) => {
       const s = get();

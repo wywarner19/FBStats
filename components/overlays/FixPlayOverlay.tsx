@@ -2,12 +2,24 @@
 
 import { useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
-import { FIX_YARDS, PENALTIES } from "@/lib/engine/constants";
+import { FIX_YARDS, PENALTIES, RESULTS } from "@/lib/engine/constants";
 import { clampSpot, deriveTimeline, direction, ordinal, resolvePenalty, spotLabel } from "@/lib/engine/rules";
+import { scoringForResult } from "@/lib/engine/reducer";
 import { jersey, playText, reviewStatus, sitText } from "@/lib/format";
-import type { PlayEvent, Situation } from "@/lib/types";
+import type { PlayEvent, PlayResult, PlayType, Situation } from "@/lib/types";
 import { OverlayShell } from "./OverlayShell";
 import { LABEL, cx } from "@/components/ui";
+
+const PLAY_TYPES_WITH_RESULTS = new Set<string>(["Run", "Pass", "Sack", "Punt", "FG", "Kneel"]);
+// Results that hand the ball (and any TD) to the defense — reassigning the
+// "player" then means the intercepting / recovering defender.
+const TURNOVER_RESULTS = new Set<PlayResult>(["Interception", "Pick 6", "Fumble lost", "Fumble TD"]);
+
+/** Whether a result on this play kind still credits a returner/defender. */
+function keepsReturner(result: PlayResult, kind: string): boolean {
+  if (TURNOVER_RESULTS.has(result)) return true;
+  return (kind === "Punt" || kind === "FG") && result === "Returned";
+}
 
 export function FixPlayOverlay() {
   const game = useGameStore((s) => s.game);
@@ -24,16 +36,35 @@ export function FixPlayOverlay() {
   if (!play) return null;
 
   const isPenalty = play.kind === "Penalty";
-  const teamRoster = play.poss === "H" ? game.setup.home.roster : game.setup.away.roster;
+  const offRoster = play.poss === "H" ? game.setup.home.roster : game.setup.away.roster;
+  const defRoster = play.poss === "H" ? game.setup.away.roster : game.setup.home.roster;
   const review = reviewStatus(play, game.setup);
   const atSnap = deriveTimeline(game.setup, game.plays, game.anchor).find((t) => t.play.id === play.id)?.atSnap;
 
+  const hasResults = PLAY_TYPES_WITH_RESULTS.has(play.kind);
+  const isPass = play.kind === "Pass";
+  // On a Pass or a Sack, playerId is the QB/passer (see boxscore crediting).
+  const isPasser = isPass || play.kind === "Sack";
+  const isTurnover = TURNOVER_RESULTS.has(play.result);
+
   const adjustYards = (v: number) => adjustPlayYards(play.id, v);
-  const reassign = (num: number) => {
-    dispatch({ type: "EDIT_PLAY", id: play.id, patch: { playerId: num } });
-    setOverlay(null);
-    flash(`Reassigned to #${num}`);
+  const patch = (p: Partial<PlayEvent>, msg: string) => {
+    dispatch({ type: "EDIT_PLAY", id: play.id, patch: { ...p, review: { ...(play.review ?? {}), edited: true } } });
+    flash(msg);
   };
+  const editResult = (r: PlayResult) =>
+    patch(
+      {
+        result: r,
+        scoring: scoringForResult(r, play.kind, play.poss),
+        // Drop a stale returner/defender when the new result no longer implies
+        // one, so the box score doesn't keep a phantom row for that player.
+        ...(keepsReturner(r, play.kind) ? {} : { returner: null }),
+      },
+      `Result → ${r}`,
+    );
+  const reassign = (field: "playerId" | "targetId" | "returner", num: number, label: string) =>
+    patch({ [field]: num }, `${label} → #${num}`);
   const editClock = (clock: string) => dispatch({ type: "EDIT_PLAY", id: play.id, patch: { clock } });
   const remove = () => {
     dispatch({ type: "DELETE_PLAY", id: play.id });
@@ -94,9 +125,29 @@ export function FixPlayOverlay() {
       </div>
 
       {isPenalty && atSnap ? (
-        <PenaltyEditor play={play} atSnap={atSnap} setup={game.setup} onPatch={(patch) => dispatch({ type: "EDIT_PLAY", id: play.id, patch })} />
+        <PenaltyEditor play={play} atSnap={atSnap} setup={game.setup} onPatch={(p) => dispatch({ type: "EDIT_PLAY", id: play.id, patch: p })} />
       ) : (
         <>
+          {hasResults && (
+            <>
+              <div className={`${LABEL} text-[10px] mb-2`}>CHANGE THE RESULT</div>
+              <div className="flex gap-2 flex-wrap mb-4">
+                {RESULTS[play.kind as PlayType].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => editResult(r)}
+                    className={cx(
+                      "min-h-[46px] px-3.5 rounded-[9px] border font-semibold text-[14px] leading-none cursor-pointer",
+                      play.result === r ? "bg-panel-4 border-turf text-cloud" : "bg-panel-5 border-edge-3 text-dim hover:text-cloud",
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
           <div className={`${LABEL} text-[10px] mb-2`}>ADJUST YARDS</div>
           <div className="flex gap-2 flex-wrap mb-4">
             {FIX_YARDS.map((v) => (
@@ -106,14 +157,38 @@ export function FixPlayOverlay() {
             ))}
           </div>
 
-          <div className={`${LABEL} text-[10px] mb-2`}>REASSIGN BALL CARRIER</div>
-          <div className="grid grid-cols-6 gap-[7px] mb-[18px]">
-            {teamRoster.map((p) => (
-              <button key={p.id} onClick={() => reassign(p.num)} className="min-h-[50px] bg-panel-4 border border-edge-3 rounded-[9px] text-cloud font-cond font-bold text-[18px] leading-none cursor-pointer">
-                {jersey(p.num)}
-              </button>
-            ))}
-          </div>
+          {/* Role-aware player reassignment. A pass has both a passer and a
+              receiver; a turnover credits the defender who took the ball. */}
+          <RosterReassign
+            label={isPasser ? "REASSIGN PASSER" : "REASSIGN BALL CARRIER"}
+            roster={offRoster}
+            selected={play.playerId}
+            onPick={(num) => reassign("playerId", num, isPasser ? "Passer" : "Ball carrier")}
+          />
+          {isPass && (
+            <RosterReassign
+              label="REASSIGN RECEIVER"
+              roster={offRoster}
+              selected={play.targetId}
+              onPick={(num) => reassign("targetId", num, "Receiver")}
+            />
+          )}
+          {isTurnover && (
+            <RosterReassign
+              label={play.result === "Interception" || play.result === "Pick 6" ? "INTERCEPTED BY" : "RECOVERED BY"}
+              roster={defRoster}
+              selected={play.returner}
+              onPick={(num) => reassign("returner", num, "Defender")}
+            />
+          )}
+          {(play.kind === "Punt" || play.kind === "FG") && play.result === "Returned" && (
+            <RosterReassign
+              label="REASSIGN RETURNER"
+              roster={defRoster}
+              selected={play.returner}
+              onPick={(num) => reassign("returner", num, "Returner")}
+            />
+          )}
         </>
       )}
 
@@ -121,6 +196,38 @@ export function FixPlayOverlay() {
         DELETE THIS PLAY
       </button>
     </OverlayShell>
+  );
+}
+
+function RosterReassign({
+  label,
+  roster,
+  selected,
+  onPick,
+}: {
+  label: string;
+  roster: import("@/lib/types").Roster;
+  selected: number | null | undefined;
+  onPick: (num: number) => void;
+}) {
+  return (
+    <>
+      <div className={`${LABEL} text-[10px] mb-2`}>{label}</div>
+      <div className="grid grid-cols-6 gap-[7px] mb-[18px]">
+        {roster.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => onPick(p.num)}
+            className={cx(
+              "min-h-[50px] rounded-[9px] border font-cond font-bold text-[18px] leading-none cursor-pointer",
+              selected === p.num ? "bg-panel-4 border-turf text-cloud" : "bg-panel-4 border-edge-3 text-cloud hover:border-turf",
+            )}
+          >
+            {jersey(p.num)}
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 

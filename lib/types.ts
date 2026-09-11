@@ -50,6 +50,14 @@ export interface ControlOp {
   spot?: number;
   down?: number;
   dist?: number;
+  /**
+   * Absolute score override, used by the catch-up ("panic") flow to reconcile
+   * the scoreboard to reality when the log has fallen behind the live game.
+   * When present on a `setSituation` op, the fold sets the score to these values
+   * (later scoring plays still increment from here).
+   */
+  scoreH?: number;
+  scoreA?: number;
   label: string;
 }
 
