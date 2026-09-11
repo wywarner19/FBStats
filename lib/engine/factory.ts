@@ -240,6 +240,23 @@ export function bellmontProfile(): TeamProfile {
 }
 
 /**
+ * Huntington North as an opponent profile. Seeded with an EMPTY roster on
+ * purpose — we don't have their real numbers, and shipping invented players
+ * into a coaching tool would be fake data. Scan or type their roster pre-game;
+ * once entered it rolls over to any future meeting.
+ */
+export function huntingtonNorthProfile(): TeamProfile {
+  return {
+    id: id("team"),
+    name: "Huntington North Vikings",
+    abbr: "HN",
+    roster: [],
+    updatedAt: Date.now(),
+    mine: false,
+  };
+}
+
+/**
  * Create a fresh, scoreless game for the schedule from one of the user's team
  * profiles (HOME in the data model) versus an opponent. Passing the opponent's
  * `roster` (from its profile or the last meeting) rolls it over so it isn't

@@ -23,6 +23,7 @@ import {
 import type { GameInfo, TeamProfile } from "@/lib/types";
 import {
   bellmontProfile,
+  huntingtonNorthProfile,
   blankTeamProfile,
   columbiaCityProfile,
   defaultTeamProfile,
@@ -441,6 +442,44 @@ export const useGameStore = create<StoreState>((set, get) => {
             await saveGame({ ...g, teamProfileId: mine.id, opponentProfileId: oppId });
           }
           await setMeta("seed-cc-bellmont-v1", true);
+        }
+        // Columbia City vs Huntington North — Fri Sep 11, CC hosts. Same pattern
+        // as the Bellmont block: never overwrites the Columbia City profile (so
+        // the user's roster edits are preserved), adds Huntington North as an
+        // opponent profile, and creates the game unless one already exists.
+        if (!(await getMeta<boolean>("seed-cc-hn-v1"))) {
+          const opp = huntingtonNorthProfile();
+          const existing = await loadTeamProfiles();
+          const mine =
+            existing.find((t) => t.name === "Columbia City Eagles" && t.mine !== false) ??
+            (await (async () => {
+              const cc = columbiaCityProfile();
+              await saveTeamProfile(cc);
+              return cc;
+            })());
+          const priorOpp = existing.find((t) => t.name === opp.name);
+          const oppId = priorOpp ? priorOpp.id : opp.id;
+          // Reuse an existing Huntington North profile if present (keeps any
+          // roster the user already scanned), else add the fresh one.
+          await saveTeamProfile(priorOpp ? { ...priorOpp } : opp);
+
+          const allGames = await loadAllGames();
+          const isCcHn = (g: GameState) => {
+            const sides = [g.setup.home, g.setup.away];
+            const hasCC = sides.some((t) => t.name === mine.name || t.abbr.toUpperCase() === "CC");
+            const hasHN = sides.some((t) => /huntington/i.test(t.name) || t.abbr.toUpperCase() === "HN");
+            return hasCC && hasHN;
+          };
+          if (!allGames.some(isCcHn)) {
+            const rollover = priorOpp?.roster?.length ? priorOpp.roster : opp.roster;
+            const g = gameFromProfile(
+              mine,
+              { name: opp.name, abbr: opp.abbr, roster: rollover, id: oppId },
+              { date: "Fri · Sep 11", venue: "home" },
+            );
+            await saveGame({ ...g, teamProfileId: mine.id, opponentProfileId: oppId });
+          }
+          await setMeta("seed-cc-hn-v1", true);
         }
         const teams = await loadTeamProfiles();
         const currentId = await getMeta<string>("currentGameId");
